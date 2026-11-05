@@ -22,6 +22,7 @@ GK is a full-stack personal assistant and business dashboard. It manages your **
 - [Quick start](#-quick-start)
 - [Using the assistant](#-using-the-assistant)
 - [Bots: create and connect](#-bots-create-and-connect)
+- [MCP server: connect Claude to GK](#-mcp-server-connect-claude-to-gk)
 - [API reference](#-api-reference)
 - [Project structure](#-project-structure)
 - [Configuration](#-configuration)
@@ -58,6 +59,11 @@ GK is a full-stack personal assistant and business dashboard. It manages your **
 - Telegram, Discord, Slack and your own bots connect through the Bot Hub
 - These connections store and verify access. The automations that use them (replying to DMs, following up leads, syncing sheets) are the next step
 
+**MCP server**
+- GK is an **MCP server**, so Claude Code, Claude Desktop, Cursor and VS Code can read and act on your GK data
+- 23 tools in 12 groups (tasks, notes, reminders, leads, invoices, posts, projects, bots…). Only read groups start on; edit, send and delete groups are separate switches that start off
+- **MCP server** page: master switch, a switch per group, keys (hashed, shown once, can be switched off or deleted), copy-paste setup for each app, and a live log of every call
+
 **Bot Hub** (the integration layer)
 - **Create** bots with a 3-step animated wizard: built-in skills, AI personas, webhooks, Telegram, Discord, Slack
 - **Route** messages to a bot with `@handle` mentions (with autocomplete) or trigger words
@@ -78,8 +84,10 @@ GK is a full-stack personal assistant and business dashboard. It manages your **
 | Sales & Marketing | Finance |
 | --- | --- |
 | ![Sales](docs/screenshots/admin-sales.jpg) | ![Finance](docs/screenshots/admin-finance.jpg) |
-| **Connections** | **Finance (dark theme)** |
-| ![Connections](docs/screenshots/connections.jpg) | ![Finance dark](docs/screenshots/admin-finance-dark.jpg) |
+| **MCP server** | **Connections** |
+| ![MCP server](docs/screenshots/mcp-server.jpg) | ![Connections](docs/screenshots/connections.jpg) |
+| **Finance (dark theme)** | |
+| ![Finance dark](docs/screenshots/admin-finance-dark.jpg) | |
 | **Assistant chat** | **Bot Hub** |
 | ![Chat](docs/screenshots/chat.jpg) | ![Bot Hub](docs/screenshots/bot-hub.jpg) |
 | **Bot creation wizard** | **Light theme + live reminder** |
@@ -223,6 +231,37 @@ Ready-to-run examples are in [`examples/`](examples/): a Node webhook bot, a Pyt
 
 ---
 
+## 🔌 MCP server: connect Claude to GK
+
+1. Open **MCP server** in the sidebar and turn **MCP access** on.
+2. Choose what apps may do. Read groups are on; switch on **Tasks — edit**, **Business — edit**, **Send through bots** or **Delete** only when you want them. Changes apply instantly, even to apps that are already connected.
+3. Click **New key**, name it after the app, and copy the URL. **The URL is a password** and is shown only once.
+4. Connect your app (the page shows these with your key filled in):
+
+| App | How |
+| --- | --- |
+| Claude Code | `claude mcp add --transport http --scope user gk "http://localhost:5000/api/mcp/<your-key>"`, then `claude mcp list` |
+| Claude Desktop (GK on localhost) | Settings → Developer → Edit Config, add `"gk": { "command": "npx", "args": ["-y", "mcp-remote", "<url>"] }` under `mcpServers`, then restart Claude Desktop |
+| Claude Desktop or web (GK deployed on https) | Settings → Connectors → Add custom connector → paste the URL, leave the OAuth fields empty |
+| Cursor | `~/.cursor/mcp.json` → `{ "mcpServers": { "gk": { "url": "<url>" } } }` |
+| VS Code | `.vscode/mcp.json` → `{ "servers": { "gk": { "type": "http", "url": "<url>" } } }` |
+
+> Claude's **custom connectors** are reached from Anthropic's servers, so they need GK at a public **https** address. While GK runs on your laptop, use Claude Code or the Claude Desktop config above.
+
+Then just ask: *"What's my revenue this month?"*, *"Which invoices are overdue?"*, *"Add a task to call Priya tomorrow"*.
+
+**How it's built** (`server/src/mcp/`): `catalog.js` is the single list of tools, groups and risk tiers. The endpoint (`POST /api/mcp/<key>` or `POST /api/mcp` with `Authorization: Bearer <key>`, Streamable HTTP via the official `@modelcontextprotocol/sdk`) checks the key, reads your switches on every request, and registers only the allowed tools, so a tool that is switched off doesn't exist for the app. Tools reuse GK's own models and actions and only ever see the key owner's data. To add a tool: one entry in `catalog.js` and one definition in `tools.js`; `test/mcp.catalog.test.js` fails if the two drift apart.
+
+Quick check from a terminal:
+
+```bash
+curl -s -X POST "http://localhost:5000/api/mcp/<your-key>" \
+  -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
+
+---
+
 ## 📡 API reference
 
 All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: Bearer <jwt>`.
@@ -243,6 +282,10 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 | GET | `/connections` 🔒 | Available tools and your connection status |
 | PUT/DELETE | `/connections/:provider` 🔒 | Save + test (secrets encrypted) or remove a tool's credentials |
 | POST | `/connections/:provider/test` 🔒 | Re-check saved credentials |
+| POST | `/mcp/:key` · `/mcp` (Bearer key) | **MCP endpoint** (JSON-RPC over Streamable HTTP) |
+| GET/PUT | `/mcp-admin/settings` 🔒 | MCP master switch and group switches |
+| GET/POST/PUT/DELETE | `/mcp-admin/keys[/:id]` 🔒 | MCP keys (the plain key is returned only on create) |
+| GET | `/mcp-admin/logs` · `/mcp-admin/connect-info` 🔒 | Recent MCP calls, connection details |
 | GET | `/bots` · `/bots/meta` 🔒 | List bots, available types and skills |
 | POST/PATCH/DELETE | `/bots[/:id]` 🔒 | Create (returns credentials once), update, delete |
 | POST | `/bots/:id/test` 🔒 | Send a message directly to a bot |
@@ -272,6 +315,7 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 │       └── index.css          Design system (tokens, glass, dark/light)
 ├── server/                    Node.js API
 │   └── src/
+│       ├── mcp/               MCP server: catalog, keys, settings, tools, endpoint
 │       ├── models/            User, Conversation, Message, Task, Note, Reminder, Bot, BotLog,
 │       │                      Lead, Invoice, Post, Project, Integration
 │       ├── routes/            auth, chat, bots, integrations, integrations-admin (Connections), analytics, dashboard, crud
