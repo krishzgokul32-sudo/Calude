@@ -113,7 +113,9 @@ docker compose up --build
 # open http://localhost:8080   →  demo login: demo@assistant.dev / demo1234
 ```
 
-To enable the Claude brain, export `ANTHROPIC_API_KEY=sk-ant-...` before `docker compose up`.
+To enable the Claude brain, copy `.env.example` to `.env` (next to `docker-compose.yml`), put your key on the `ANTHROPIC_API_KEY=` line, and run `docker compose up` again. Docker Compose reads `.env` automatically. Check `http://localhost:5000/api/health`: it shows `"claude":true` when the key was picked up.
+
+> Seeing *"needs an ANTHROPIC_API_KEY on the server to think"*? The server didn't receive a key. On Windows, `ANTHROPIC_API_KEY=... docker compose up` doesn't work in PowerShell, so use the `.env` file instead.
 
 ### Option B: Run locally
 
