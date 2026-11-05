@@ -4,7 +4,7 @@ import Bot from '../models/Bot.js';
 import BotLog from '../models/BotLog.js';
 import { builtinSkills } from './builtins.js';
 import { telegram, postDiscord, postSlack } from './connectors.js';
-import { llmEnabled, runClaude } from '../services/llm.js';
+import { llmAvailable, runClaude } from '../services/llm.js';
 import { emitToUser } from '../services/realtime.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -42,11 +42,12 @@ async function runBot(bot, text, ctx) {
     }
     case 'ai': {
       const persona = bot.config?.systemPrompt || `You are ${bot.name}, a helpful bot.`;
-      if (!llmEnabled()) {
-        return `🤖 *${bot.name}* needs an ANTHROPIC_API_KEY on the server to think. You said: "${text}"`;
+      if (!(await llmAvailable(ctx.user))) {
+        return `🤖 *${bot.name}* needs a Claude API key to think. Add yours in **Settings → Claude API key**.`;
       }
       const history = (ctx.history || []).slice(-10);
       const { text: reply } = await runClaude({
+        user: ctx.user,
         system: `${persona}\nYou are a bot inside ${ctx.user?.name || 'the user'}'s personal assistant. Keep answers concise and use Markdown.`,
         messages: [...history, { role: 'user', content: text }],
       });

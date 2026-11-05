@@ -11,7 +11,7 @@ const HELP = `Here's what I can do:
 - **Bots** — mention any bot with \`@handle\`, e.g. "@weather in Tokyo", "@calc 12*7", or say "list bots"
 - **Analysis** — "analyze: I love this new feature but the login is slow"
 
-_Tip: add an ANTHROPIC_API_KEY on the server to unlock full conversational AI._`;
+_Tip: add your Claude API key in **Settings** to unlock full conversational AI._`;
 
 export function detectIntent(text) {
   const t = text.trim();

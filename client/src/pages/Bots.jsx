@@ -79,7 +79,7 @@ function ConfigFields({ form, setForm, meta }) {
         <div className="field">
           <label className="label">Personality & instructions</label>
           <textarea className="textarea" style={{ minHeight: 140 }} value={cfg.systemPrompt || ''} placeholder="You are Chef, a friendly cooking expert. Suggest quick recipes with ingredients the user already has…" onChange={(e) => set('systemPrompt', e.target.value)} />
-          <p className="small muted" style={{ marginTop: 6 }}>Powered by Claude when the server has an ANTHROPIC_API_KEY.</p>
+          <p className="small muted" style={{ marginTop: 6 }}>Powered by Claude once you add your API key in Settings.</p>
         </div>
       );
     case 'webhook':

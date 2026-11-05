@@ -1,16 +1,16 @@
 # ✨ GK — Personal Assistant (end to end)
 
-GK is a full-stack personal assistant. It manages your **tasks, notes and reminders**, and it acts as a **hub for all your bots**: you can create bots, connect bots you already have (Telegram, Discord, Slack, or any webhook bot you've built), and they all work through one assistant.
+GK is a full-stack personal assistant and business dashboard. It manages your **tasks, notes and reminders**, gives each team (**Sales & Marketing, Finance, Content, Projects**) its own live analytics dashboard, and acts as a **hub for all your bots and tools**: create bots, connect bots you already have (Telegram, Discord, Slack, or any webhook bot you've built), and plug in WhatsApp, Gmail, Google Sheets, Instagram, YouTube, LinkedIn and Meta Ads.
 
 | Layer | Tech |
 | --- | --- |
-| 🎨 Frontend | **React 19** + Vite, **Framer Motion** animations, glassmorphism UI, Lucide icons, Socket.IO client, Web Speech API (voice) |
+| 🎨 Frontend | **React 19** + Vite, **Framer Motion** animations, clean white theme (dark glass optional), hand-built SVG charts, Lucide icons, Socket.IO client, Web Speech API (voice) |
 | ⚙️ Backend | **Node.js** + Express 5, Socket.IO (real-time), JWT auth, node-cron scheduler |
 | 🍃 Database | **MongoDB** + Mongoose |
 | 🐍 AI service | **Python** + FastAPI: sentiment, intent (Naive Bayes), entities, keywords, summaries |
 | 🧠 LLM brain (optional) | **Claude** (`claude-opus-5-5`) with tool use. Without an API key, a built-in rule-based brain is used |
 
-![Dashboard](docs/screenshots/dashboard.jpg)
+![Business overview](docs/screenshots/admin-overview.jpg)
 
 ---
 
@@ -22,6 +22,7 @@ GK is a full-stack personal assistant. It manages your **tasks, notes and remind
 - [Quick start](#-quick-start)
 - [Using the assistant](#-using-the-assistant)
 - [Bots: create and connect](#-bots-create-and-connect)
+- [MCP server: connect Claude to GK](#-mcp-server-connect-claude-to-gk)
 - [API reference](#-api-reference)
 - [Project structure](#-project-structure)
 - [Configuration](#-configuration)
@@ -34,7 +35,7 @@ GK is a full-stack personal assistant. It manages your **tasks, notes and remind
 
 **Assistant**
 - Chat in natural language. The assistant takes real actions: creates tasks, saves notes, schedules reminders, and calls bots.
-- **Claude brain** (when `ANTHROPIC_API_KEY` is set): an agentic tool-use loop with 10 tools (`create_task`, `set_reminder`, `call_bot`, `analyze_text`, …).
+- **Claude brain** (once you add your API key in **Settings**, or set `ANTHROPIC_API_KEY` on the server): an agentic tool-use loop with 10 tools (`create_task`, `set_reminder`, `call_bot`, `analyze_text`, …).
 - **Rule-based brain** (no key needed): understands the core commands, so the app works offline.
 - **Voice**: speak to it (speech-to-text) and have it read replies aloud (text-to-speech).
 - Real-time replies over Socket.IO. Conversations sync across tabs and channels.
@@ -44,6 +45,24 @@ GK is a full-stack personal assistant. It manages your **tasks, notes and remind
 - 📝 Masonry notes with colors and pins. Long notes get an auto-summary from Python
 - ⏰ Reminders (once, daily or weekly), delivered as in-app toasts, browser notifications and voice, **and through your Telegram / Discord / Slack bots**
 - 📊 Animated dashboard: stats, 7-day activity chart, progress ring, bot fleet, service health
+
+**Team dashboards** (Admin Dashboard V2)
+- **Overview** of every team plus a page each for **Sales & Marketing**, **Finance**, **Content** and **Projects**
+- KPI tiles with change vs the previous period and sparklines; one date-range filter (7D / 30D / 90D / 12M) scopes every number on the page
+- Charts: revenue vs expenses, leads over time, pipeline funnel, leads by source, views by platform, invoice and content status, project progress meters. Every chart has a hover tooltip and a **Table** view
+- Each team page has its own records table (leads, invoices, posts, projects) with search, add, edit and delete; tasks can be linked to projects
+- **Load sample data** with one click to see the dashboards before you add real records. Currency is set in Settings (default INR)
+
+**Connections**
+- One page to plug in **WhatsApp Business, Instagram, Meta Ads, YouTube, LinkedIn, Gmail and Google Sheets**
+- Each card asks for that tool's keys, shows step-by-step help, makes one read-only call to check them, and stores them encrypted
+- Telegram, Discord, Slack and your own bots connect through the Bot Hub
+- These connections store and verify access. The automations that use them (replying to DMs, following up leads, syncing sheets) are the next step
+
+**MCP server**
+- GK is an **MCP server**, so Claude Code, Claude Desktop, Cursor and VS Code can read and act on your GK data
+- 23 tools in 12 groups (tasks, notes, reminders, leads, invoices, posts, projects, bots…). Only read groups start on; edit, send and delete groups are separate switches that start off
+- **MCP server** page: master switch, a switch per group, keys (hashed, shown once, can be switched off or deleted), copy-paste setup for each app, and a live log of every call
 
 **Bot Hub** (the integration layer)
 - **Create** bots with a 3-step animated wizard: built-in skills, AI personas, webhooks, Telegram, Discord, Slack
@@ -56,14 +75,20 @@ GK is a full-stack personal assistant. It manages your **tasks, notes and remind
 - An animated assistant "orb" with idle, thinking, listening and speaking states
 - Shared-layout nav pill, page transitions, staggered cards, spring modals, animated counters and charts
 - Command palette (**Ctrl/⌘ + K**): jump anywhere or send a command straight to the assistant
-- Dark and light themes, a responsive mobile layout with a bottom nav, and `prefers-reduced-motion` support
+- A clean white theme by default with the dark aurora-glass theme one click away, a responsive mobile layout with a bottom nav, and `prefers-reduced-motion` support
 
 ---
 
 ## 📸 Screenshots
 
-| Assistant chat | Bot Hub |
+| Sales & Marketing | Finance |
 | --- | --- |
+| ![Sales](docs/screenshots/admin-sales.jpg) | ![Finance](docs/screenshots/admin-finance.jpg) |
+| **MCP server** | **Connections** |
+| ![MCP server](docs/screenshots/mcp-server.jpg) | ![Connections](docs/screenshots/connections.jpg) |
+| **Finance (dark theme)** | |
+| ![Finance dark](docs/screenshots/admin-finance-dark.jpg) | |
+| **Assistant chat** | **Bot Hub** |
 | ![Chat](docs/screenshots/chat.jpg) | ![Bot Hub](docs/screenshots/bot-hub.jpg) |
 | **Bot creation wizard** | **Light theme + live reminder** |
 | ![Wizard](docs/screenshots/bot-wizard.jpg) | ![Light](docs/screenshots/light-reminder.jpg) |
@@ -113,7 +138,9 @@ docker compose up --build
 # open http://localhost:8080   →  demo login: demo@assistant.dev / demo1234
 ```
 
-To enable the Claude brain, export `ANTHROPIC_API_KEY=sk-ant-...` before `docker compose up`.
+**Turn on the Claude brain:** sign in, open **Settings → Claude API key**, paste your key from [console.anthropic.com](https://console.anthropic.com/settings/keys) and click **Save key**. GK checks the key with Anthropic, stores it encrypted in MongoDB, and starts using it immediately. No restart needed. Each user can add their own key.
+
+Prefer one key for everyone? Copy `.env.example` to `.env` (next to `docker-compose.yml`), fill in `ANTHROPIC_API_KEY=`, then run `docker compose down` and `docker compose up`. A user's own key takes priority over the server key. (On Windows, `ANTHROPIC_API_KEY=... docker compose up` doesn't work in PowerShell, so use the `.env` file.)
 
 ### Option B: Run locally
 
@@ -169,6 +196,8 @@ Try these in the chat (they work with the rule-based brain; with Claude, any phr
 
 Press **Ctrl/⌘ + K** anywhere to run a command without opening the chat. Click the 🎙️ mic to talk.
 
+> **Mic not working?** Voice input uses the browser's speech recognition: use **Chrome or Edge** (Firefox doesn't support it and Brave blocks it), open the app at **http://localhost** or an https address (not an IP like `192.168.x.x`), allow the microphone when asked, and stay online (Chrome sends audio to Google to recognise it). If something is wrong, GK now tells you exactly what.
+
 ---
 
 ## 🤖 Bots: create and connect
@@ -202,6 +231,37 @@ Ready-to-run examples are in [`examples/`](examples/): a Node webhook bot, a Pyt
 
 ---
 
+## 🔌 MCP server: connect Claude to GK
+
+1. Open **MCP server** in the sidebar and turn **MCP access** on.
+2. Choose what apps may do. Read groups are on; switch on **Tasks — edit**, **Business — edit**, **Send through bots** or **Delete** only when you want them. Changes apply instantly, even to apps that are already connected.
+3. Click **New key**, name it after the app, and copy the URL. **The URL is a password** and is shown only once.
+4. Connect your app (the page shows these with your key filled in):
+
+| App | How |
+| --- | --- |
+| Claude Code | `claude mcp add --transport http --scope user gk "http://localhost:5000/api/mcp/<your-key>"`, then `claude mcp list` |
+| Claude Desktop (GK on localhost) | Settings → Developer → Edit Config, add `"gk": { "command": "npx", "args": ["-y", "mcp-remote", "<url>"] }` under `mcpServers`, then restart Claude Desktop |
+| Claude Desktop or web (GK deployed on https) | Settings → Connectors → Add custom connector → paste the URL, leave the OAuth fields empty |
+| Cursor | `~/.cursor/mcp.json` → `{ "mcpServers": { "gk": { "url": "<url>" } } }` |
+| VS Code | `.vscode/mcp.json` → `{ "servers": { "gk": { "type": "http", "url": "<url>" } } }` |
+
+> Claude's **custom connectors** are reached from Anthropic's servers, so they need GK at a public **https** address. While GK runs on your laptop, use Claude Code or the Claude Desktop config above.
+
+Then just ask: *"What's my revenue this month?"*, *"Which invoices are overdue?"*, *"Add a task to call Priya tomorrow"*.
+
+**How it's built** (`server/src/mcp/`): `catalog.js` is the single list of tools, groups and risk tiers. The endpoint (`POST /api/mcp/<key>` or `POST /api/mcp` with `Authorization: Bearer <key>`, Streamable HTTP via the official `@modelcontextprotocol/sdk`) checks the key, reads your switches on every request, and registers only the allowed tools, so a tool that is switched off doesn't exist for the app. Tools reuse GK's own models and actions and only ever see the key owner's data. To add a tool: one entry in `catalog.js` and one definition in `tools.js`; `test/mcp.catalog.test.js` fails if the two drift apart.
+
+Quick check from a terminal:
+
+```bash
+curl -s -X POST "http://localhost:5000/api/mcp/<your-key>" \
+  -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
+
+---
+
 ## 📡 API reference
 
 All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: Bearer <jwt>`.
@@ -210,11 +270,22 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 | --- | --- | --- |
 | POST | `/auth/register` · `/auth/login` | Returns `{ token, user }` |
 | GET/PATCH | `/auth/me` 🔒 | Profile, assistant name, preferences (theme, voice, city) |
+| PUT/DELETE | `/auth/me/api-key` 🔒 | Save (verified + encrypted) or remove your own Claude API key |
 | POST | `/chat/message` 🔒 | `{ text, conversationId? }` → `{ conversation, messages:[user, reply] }` |
 | GET/DELETE | `/chat/conversations[/:id]` 🔒 | List or delete conversations |
 | GET | `/chat/conversations/:id/messages` 🔒 | Message history |
 | CRUD | `/tasks` · `/notes` · `/reminders` 🔒 | `GET` · `POST` · `PATCH /:id` · `DELETE /:id` |
 | GET | `/dashboard` 🔒 | Stats, activity, upcoming reminders, service health |
+| GET | `/analytics/:team?days=7\|30\|90\|365` 🔒 | Team analytics: `overview`, `sales`, `finance`, `content`, `projects` |
+| POST | `/analytics/sample-data` 🔒 | Add sample leads, invoices, posts and projects (only if you have none) |
+| CRUD | `/leads` · `/invoices` · `/posts` · `/projects` 🔒 | Business records behind the team dashboards |
+| GET | `/connections` 🔒 | Available tools and your connection status |
+| PUT/DELETE | `/connections/:provider` 🔒 | Save + test (secrets encrypted) or remove a tool's credentials |
+| POST | `/connections/:provider/test` 🔒 | Re-check saved credentials |
+| POST | `/mcp/:key` · `/mcp` (Bearer key) | **MCP endpoint** (JSON-RPC over Streamable HTTP) |
+| GET/PUT | `/mcp-admin/settings` 🔒 | MCP master switch and group switches |
+| GET/POST/PUT/DELETE | `/mcp-admin/keys[/:id]` 🔒 | MCP keys (the plain key is returned only on create) |
+| GET | `/mcp-admin/logs` · `/mcp-admin/connect-info` 🔒 | Recent MCP calls, connection details |
 | GET | `/bots` · `/bots/meta` 🔒 | List bots, available types and skills |
 | POST/PATCH/DELETE | `/bots[/:id]` 🔒 | Create (returns credentials once), update, delete |
 | POST | `/bots/:id/test` 🔒 | Send a message directly to a bot |
@@ -235,17 +306,22 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 .
 ├── client/                    React app
 │   └── src/
-│       ├── components/        AnimatedBackground, AssistantOrb, Layout, CommandPalette, ui (Modal, Tabs, Switch…)
+│       ├── components/        AnimatedBackground, AssistantOrb, Layout, CommandPalette, ui (Modal, Tabs, Switch…),
+│       │                      charts (StatTile, LineChart, BarList, Funnel, SegmentedBar, Meter), admin (TeamShell, RecordsTable)
 │       ├── context/           AuthContext (JWT + socket), ToastContext
 │       ├── hooks/useVoice.js  Speech recognition + synthesis
-│       ├── pages/             Dashboard, Chat, Tasks, Notes, Reminders, Bots, Settings, AuthPage
+│       ├── pages/             Dashboard, Chat, Tasks, Notes, Reminders, Bots, Connections, Settings, AuthPage,
+│       │                      admin/ (Overview, Sales, Finance, Content, Projects)
 │       └── index.css          Design system (tokens, glass, dark/light)
 ├── server/                    Node.js API
 │   └── src/
-│       ├── models/            User, Conversation, Message, Task, Note, Reminder, Bot, BotLog
-│       ├── routes/            auth, chat, bots, integrations, dashboard, crud
+│       ├── mcp/               MCP server: catalog, keys, settings, tools, endpoint
+│       ├── models/            User, Conversation, Message, Task, Note, Reminder, Bot, BotLog,
+│       │                      Lead, Invoice, Post, Project, Integration
+│       ├── routes/            auth, chat, bots, integrations, integrations-admin (Connections), analytics, dashboard, crud
 │       ├── services/          assistant (orchestrator), llm (Claude), actions (tools), localBrain,
-│       │                      scheduler, timeParser, pythonAI, realtime, defaultBots, demoSeed
+│       │                      scheduler, timeParser, pythonAI, realtime, defaultBots, demoSeed,
+│       │                      analytics, sampleData, integrations (tool checks), secrets (encryption)
 │       └── bots/              botManager (routing + dispatch), builtins, calculator,
 │                              connectors (Telegram/Discord/Slack), telegramBridge
 ├── ai-service/                Python FastAPI NLP service (+ pytest tests)
@@ -266,7 +342,8 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 | `USE_MEMORY_DB` | `false` | `true` boots an in-memory MongoDB and seeds the demo user |
 | `SEED_DEMO` | — | `true` creates the demo account on startup |
 | `JWT_SECRET` | dev value | **Must** be set in production |
-| `ANTHROPIC_API_KEY` | — | Enables the Claude brain and AI persona bots |
+| `ANTHROPIC_API_KEY` | — | Server-wide Claude key for users who haven't added their own in Settings |
+| `ENCRYPTION_KEY` | `JWT_SECRET` | Encrypts users' saved API keys. Changing it (or `JWT_SECRET` when unset) means users must re-enter their keys |
 | `CLAUDE_MODEL` | `claude-opus-5-5` | Claude model id |
 | `AI_SERVICE_URL` | `http://localhost:8000` | Python service |
 | `CLIENT_URL` | `http://localhost:5173` | CORS origin |

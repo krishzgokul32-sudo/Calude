@@ -9,8 +9,19 @@ const taskSchema = new mongoose.Schema(
     priority: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
     dueDate: Date,
     tags: [String],
+    project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', index: true },
+    completedAt: Date,
   },
   { timestamps: true }
 );
+
+// Track when a task was finished, for the Projects analytics.
+taskSchema.pre('save', function () {
+  if (this.isModified('status')) this.completedAt = this.status === 'done' ? new Date() : undefined;
+});
+taskSchema.pre('findOneAndUpdate', function () {
+  const status = this.getUpdate()?.status ?? this.getUpdate()?.$set?.status;
+  if (status) this.set({ completedAt: status === 'done' ? new Date() : null });
+});
 
 export default mongoose.model('Task', taskSchema);

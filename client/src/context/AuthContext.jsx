@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
 
   // Theme follows the user's preference.
   useEffect(() => {
-    document.documentElement.dataset.theme = user?.preferences?.theme || localStorage.getItem('pa_theme') || 'dark';
+    document.documentElement.dataset.theme = user?.preferences?.theme || localStorage.getItem('pa_theme') || 'light';
   }, [user?.preferences?.theme]);
 
   // One authenticated socket per session for live updates.
@@ -55,7 +55,7 @@ export function AuthProvider({ children }) {
     if (data.user.preferences?.theme) localStorage.setItem('pa_theme', data.user.preferences.theme);
   }, []);
 
-  return <AuthContext.Provider value={{ user, loading, socket, authenticate, logout, updateUser }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, setUser, loading, socket, authenticate, logout, updateUser }}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => useContext(AuthContext);

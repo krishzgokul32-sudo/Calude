@@ -48,3 +48,12 @@ test('webhook signatures are HMAC-SHA256', () => {
   assert.equal(signPayload('secret', '{"a":1}'), expected);
   assert.notEqual(signPayload('secret', 'x'), signPayload('other', 'x'));
 });
+
+test('saved API keys round-trip through encryption', async () => {
+  const { encrypt, decrypt } = await import('../src/services/secrets.js');
+  const stored = encrypt('sk-ant-api03-example');
+  assert.ok(!stored.includes('sk-ant'));
+  assert.notEqual(encrypt('sk-ant-api03-example'), stored); // random IV
+  assert.equal(decrypt(stored), 'sk-ant-api03-example');
+  assert.equal(decrypt(stored.slice(0, -4) + 'AAAA'), null); // tampered
+});

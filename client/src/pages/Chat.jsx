@@ -100,7 +100,10 @@ export default function Chat() {
   convoRef.current = id;
 
   const send = useRef(null);
-  const voice = useVoice({ onResult: (t) => send.current?.(t) });
+  const voice = useVoice({
+    onResult: (t) => send.current?.(t),
+    onError: (msg) => toast('Microphone problem', { type: 'error', body: msg, duration: 9000 }),
+  });
 
   const loadConversations = useCallback(() => api.get('/chat/conversations').then((r) => setConversations(r.data)), []);
 
@@ -299,7 +302,7 @@ export default function Chat() {
                 }
               }}
             />
-            {voice.supported && (
+            {(
               <motion.button
                 className="icon-btn"
                 animate={voice.listening ? { scale: [1, 1.15, 1], color: '#fb7185' } : {}}

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { Modal } from './ui';
-import { NAV } from '../lib/nav';
+import { NAV_LINKS as NAV } from '../lib/nav';
 import { api } from '../lib/api';
 import { useToast } from '../context/ToastContext';
 

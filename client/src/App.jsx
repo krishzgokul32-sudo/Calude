@@ -13,6 +13,13 @@ const Notes = lazy(() => import('./pages/Notes'));
 const Reminders = lazy(() => import('./pages/Reminders'));
 const Bots = lazy(() => import('./pages/Bots'));
 const Settings = lazy(() => import('./pages/Settings'));
+const Connections = lazy(() => import('./pages/Connections'));
+const McpServer = lazy(() => import('./pages/McpServer'));
+const AdminOverview = lazy(() => import('./pages/admin/Overview'));
+const AdminSales = lazy(() => import('./pages/admin/Sales'));
+const AdminFinance = lazy(() => import('./pages/admin/Finance'));
+const AdminContent = lazy(() => import('./pages/admin/Content'));
+const AdminProjects = lazy(() => import('./pages/admin/Projects'));
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -37,6 +44,13 @@ export default function App() {
             <Route path="reminders" element={<Reminders />} />
             <Route path="bots" element={<Bots />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="connections" element={<Connections />} />
+            <Route path="mcp" element={<McpServer />} />
+            <Route path="admin" element={<AdminOverview />} />
+            <Route path="admin/sales" element={<AdminSales />} />
+            <Route path="admin/finance" element={<AdminFinance />} />
+            <Route path="admin/content" element={<AdminContent />} />
+            <Route path="admin/projects" element={<AdminProjects />} />
           </Route>
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
