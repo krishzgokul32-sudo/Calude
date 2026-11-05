@@ -1,16 +1,16 @@
 # ✨ GK — Personal Assistant (end to end)
 
-GK is a full-stack personal assistant. It manages your **tasks, notes and reminders**, and it acts as a **hub for all your bots**: you can create bots, connect bots you already have (Telegram, Discord, Slack, or any webhook bot you've built), and they all work through one assistant.
+GK is a full-stack personal assistant and business dashboard. It manages your **tasks, notes and reminders**, gives each team (**Sales & Marketing, Finance, Content, Projects**) its own live analytics dashboard, and acts as a **hub for all your bots and tools**: create bots, connect bots you already have (Telegram, Discord, Slack, or any webhook bot you've built), and plug in WhatsApp, Gmail, Google Sheets, Instagram, YouTube, LinkedIn and Meta Ads.
 
 | Layer | Tech |
 | --- | --- |
-| 🎨 Frontend | **React 19** + Vite, **Framer Motion** animations, glassmorphism UI, Lucide icons, Socket.IO client, Web Speech API (voice) |
+| 🎨 Frontend | **React 19** + Vite, **Framer Motion** animations, clean white theme (dark glass optional), hand-built SVG charts, Lucide icons, Socket.IO client, Web Speech API (voice) |
 | ⚙️ Backend | **Node.js** + Express 5, Socket.IO (real-time), JWT auth, node-cron scheduler |
 | 🍃 Database | **MongoDB** + Mongoose |
 | 🐍 AI service | **Python** + FastAPI: sentiment, intent (Naive Bayes), entities, keywords, summaries |
 | 🧠 LLM brain (optional) | **Claude** (`claude-opus-5-5`) with tool use. Without an API key, a built-in rule-based brain is used |
 
-![Dashboard](docs/screenshots/dashboard.jpg)
+![Business overview](docs/screenshots/admin-overview.jpg)
 
 ---
 
@@ -45,6 +45,19 @@ GK is a full-stack personal assistant. It manages your **tasks, notes and remind
 - ⏰ Reminders (once, daily or weekly), delivered as in-app toasts, browser notifications and voice, **and through your Telegram / Discord / Slack bots**
 - 📊 Animated dashboard: stats, 7-day activity chart, progress ring, bot fleet, service health
 
+**Team dashboards** (Admin Dashboard V2)
+- **Overview** of every team plus a page each for **Sales & Marketing**, **Finance**, **Content** and **Projects**
+- KPI tiles with change vs the previous period and sparklines; one date-range filter (7D / 30D / 90D / 12M) scopes every number on the page
+- Charts: revenue vs expenses, leads over time, pipeline funnel, leads by source, views by platform, invoice and content status, project progress meters. Every chart has a hover tooltip and a **Table** view
+- Each team page has its own records table (leads, invoices, posts, projects) with search, add, edit and delete; tasks can be linked to projects
+- **Load sample data** with one click to see the dashboards before you add real records. Currency is set in Settings (default INR)
+
+**Connections**
+- One page to plug in **WhatsApp Business, Instagram, Meta Ads, YouTube, LinkedIn, Gmail and Google Sheets**
+- Each card asks for that tool's keys, shows step-by-step help, makes one read-only call to check them, and stores them encrypted
+- Telegram, Discord, Slack and your own bots connect through the Bot Hub
+- These connections store and verify access. The automations that use them (replying to DMs, following up leads, syncing sheets) are the next step
+
 **Bot Hub** (the integration layer)
 - **Create** bots with a 3-step animated wizard: built-in skills, AI personas, webhooks, Telegram, Discord, Slack
 - **Route** messages to a bot with `@handle` mentions (with autocomplete) or trigger words
@@ -56,14 +69,18 @@ GK is a full-stack personal assistant. It manages your **tasks, notes and remind
 - An animated assistant "orb" with idle, thinking, listening and speaking states
 - Shared-layout nav pill, page transitions, staggered cards, spring modals, animated counters and charts
 - Command palette (**Ctrl/⌘ + K**): jump anywhere or send a command straight to the assistant
-- Dark and light themes, a responsive mobile layout with a bottom nav, and `prefers-reduced-motion` support
+- A clean white theme by default with the dark aurora-glass theme one click away, a responsive mobile layout with a bottom nav, and `prefers-reduced-motion` support
 
 ---
 
 ## 📸 Screenshots
 
-| Assistant chat | Bot Hub |
+| Sales & Marketing | Finance |
 | --- | --- |
+| ![Sales](docs/screenshots/admin-sales.jpg) | ![Finance](docs/screenshots/admin-finance.jpg) |
+| **Connections** | **Finance (dark theme)** |
+| ![Connections](docs/screenshots/connections.jpg) | ![Finance dark](docs/screenshots/admin-finance-dark.jpg) |
+| **Assistant chat** | **Bot Hub** |
 | ![Chat](docs/screenshots/chat.jpg) | ![Bot Hub](docs/screenshots/bot-hub.jpg) |
 | **Bot creation wizard** | **Light theme + live reminder** |
 | ![Wizard](docs/screenshots/bot-wizard.jpg) | ![Light](docs/screenshots/light-reminder.jpg) |
@@ -171,6 +188,8 @@ Try these in the chat (they work with the rule-based brain; with Claude, any phr
 
 Press **Ctrl/⌘ + K** anywhere to run a command without opening the chat. Click the 🎙️ mic to talk.
 
+> **Mic not working?** Voice input uses the browser's speech recognition: use **Chrome or Edge** (Firefox doesn't support it and Brave blocks it), open the app at **http://localhost** or an https address (not an IP like `192.168.x.x`), allow the microphone when asked, and stay online (Chrome sends audio to Google to recognise it). If something is wrong, GK now tells you exactly what.
+
 ---
 
 ## 🤖 Bots: create and connect
@@ -218,6 +237,12 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 | GET | `/chat/conversations/:id/messages` 🔒 | Message history |
 | CRUD | `/tasks` · `/notes` · `/reminders` 🔒 | `GET` · `POST` · `PATCH /:id` · `DELETE /:id` |
 | GET | `/dashboard` 🔒 | Stats, activity, upcoming reminders, service health |
+| GET | `/analytics/:team?days=7\|30\|90\|365` 🔒 | Team analytics: `overview`, `sales`, `finance`, `content`, `projects` |
+| POST | `/analytics/sample-data` 🔒 | Add sample leads, invoices, posts and projects (only if you have none) |
+| CRUD | `/leads` · `/invoices` · `/posts` · `/projects` 🔒 | Business records behind the team dashboards |
+| GET | `/connections` 🔒 | Available tools and your connection status |
+| PUT/DELETE | `/connections/:provider` 🔒 | Save + test (secrets encrypted) or remove a tool's credentials |
+| POST | `/connections/:provider/test` 🔒 | Re-check saved credentials |
 | GET | `/bots` · `/bots/meta` 🔒 | List bots, available types and skills |
 | POST/PATCH/DELETE | `/bots[/:id]` 🔒 | Create (returns credentials once), update, delete |
 | POST | `/bots/:id/test` 🔒 | Send a message directly to a bot |
@@ -238,17 +263,21 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 .
 ├── client/                    React app
 │   └── src/
-│       ├── components/        AnimatedBackground, AssistantOrb, Layout, CommandPalette, ui (Modal, Tabs, Switch…)
+│       ├── components/        AnimatedBackground, AssistantOrb, Layout, CommandPalette, ui (Modal, Tabs, Switch…),
+│       │                      charts (StatTile, LineChart, BarList, Funnel, SegmentedBar, Meter), admin (TeamShell, RecordsTable)
 │       ├── context/           AuthContext (JWT + socket), ToastContext
 │       ├── hooks/useVoice.js  Speech recognition + synthesis
-│       ├── pages/             Dashboard, Chat, Tasks, Notes, Reminders, Bots, Settings, AuthPage
+│       ├── pages/             Dashboard, Chat, Tasks, Notes, Reminders, Bots, Connections, Settings, AuthPage,
+│       │                      admin/ (Overview, Sales, Finance, Content, Projects)
 │       └── index.css          Design system (tokens, glass, dark/light)
 ├── server/                    Node.js API
 │   └── src/
-│       ├── models/            User, Conversation, Message, Task, Note, Reminder, Bot, BotLog
-│       ├── routes/            auth, chat, bots, integrations, dashboard, crud
+│       ├── models/            User, Conversation, Message, Task, Note, Reminder, Bot, BotLog,
+│       │                      Lead, Invoice, Post, Project, Integration
+│       ├── routes/            auth, chat, bots, integrations, integrations-admin (Connections), analytics, dashboard, crud
 │       ├── services/          assistant (orchestrator), llm (Claude), actions (tools), localBrain,
-│       │                      scheduler, timeParser, pythonAI, realtime, defaultBots, demoSeed
+│       │                      scheduler, timeParser, pythonAI, realtime, defaultBots, demoSeed,
+│       │                      analytics, sampleData, integrations (tool checks), secrets (encryption)
 │       └── bots/              botManager (routing + dispatch), builtins, calculator,
 │                              connectors (Telegram/Discord/Slack), telegramBridge
 ├── ai-service/                Python FastAPI NLP service (+ pytest tests)

@@ -3,6 +3,7 @@ import Task from '../models/Task.js';
 import Note from '../models/Note.js';
 import Reminder from '../models/Reminder.js';
 import { seedDefaultBots } from './defaultBots.js';
+import { createSampleData } from './sampleData.js';
 
 export const DEMO = { email: 'demo@assistant.dev', password: 'demo1234' };
 
@@ -17,6 +18,7 @@ export async function seedDemo() {
     { user: user._id, title: 'Read 20 pages', priority: 'low', status: 'done' },
   ]);
   await Note.create({ user: user._id, title: 'Welcome 👋', content: 'This is your personal assistant. Try chatting: "remind me to drink water in 1 minute".', pinned: true });
+  await createSampleData(user._id);
   await Reminder.create({ user: user._id, text: 'Stand up and stretch', remindAt: new Date(Date.now() + 2 * 60e3) });
   return true;
 }

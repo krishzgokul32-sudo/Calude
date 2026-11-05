@@ -17,11 +17,13 @@ export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [over, setOver] = useState(null);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', priority: 'medium', dueDate: '' });
+  const [form, setForm] = useState({ title: '', description: '', priority: 'medium', dueDate: '', project: '' });
+  const [projects, setProjects] = useState([]);
   const toast = useToast();
 
   const load = useCallback(() => api.get('/tasks').then((r) => setTasks(r.data)), []);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { api.get('/projects').then((r) => setProjects(r.data)).catch(() => {}); }, []);
   useSocketEvent('data:changed', ({ kind }) => kind === 'tasks' && load());
 
   const update = async (task, patch) => {
@@ -38,9 +40,9 @@ export default function Tasks() {
   const create = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/tasks', { ...form, dueDate: form.dueDate || undefined });
+      await api.post('/tasks', { ...form, dueDate: form.dueDate || undefined, project: form.project || undefined });
       setOpen(false);
-      setForm({ title: '', description: '', priority: 'medium', dueDate: '' });
+      setForm({ title: '', description: '', priority: 'medium', dueDate: '', project: '' });
       load();
     } catch (err) {
       toast(errMsg(err), { type: 'error' });
@@ -114,6 +116,7 @@ export default function Tasks() {
                       <div className="row-wrap" style={{ marginTop: 10 }}>
                         <span className={`badge ${t.priority}`}>{t.priority}</span>
                         {t.dueDate && <span className="badge"><Calendar size={12} /> {fmtDateTime(t.dueDate)}</span>}
+                        {t.project && projects.find((p) => p._id === t.project) && <span className="badge">📁 {projects.find((p) => p._id === t.project).name}</span>}
                       </div>
                     </div>
                   </motion.div>
@@ -143,6 +146,15 @@ export default function Tasks() {
               <input className="input" type="datetime-local" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
             </div>
           </div>
+          {projects.length > 0 && (
+            <div className="field">
+              <label className="label">Project</label>
+              <select className="select" value={form.project} onChange={(e) => setForm({ ...form, project: e.target.value })}>
+                <option value="">No project</option>
+                {projects.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
+              </select>
+            </div>
+          )}
           <button className="btn btn-primary" style={{ width: '100%' }}>Create task</button>
         </form>
       </Modal>

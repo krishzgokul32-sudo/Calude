@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
 
   // Theme follows the user's preference.
   useEffect(() => {
-    document.documentElement.dataset.theme = user?.preferences?.theme || localStorage.getItem('pa_theme') || 'dark';
+    document.documentElement.dataset.theme = user?.preferences?.theme || localStorage.getItem('pa_theme') || 'light';
   }, [user?.preferences?.theme]);
 
   // One authenticated socket per session for live updates.

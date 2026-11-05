@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LogOut, Moon, Sun, Command } from 'lucide-react';
-import { NAV } from '../lib/nav';
+import { NAV, MOBILE_NAV } from '../lib/nav';
 import { useAuth } from '../context/AuthContext';
 import AssistantOrb from './AssistantOrb';
 import CommandPalette from './CommandPalette';
@@ -12,7 +12,7 @@ export default function Layout() {
   const { user, logout, updateUser } = useAuth();
   const location = useLocation();
   const [palette, setPalette] = useState(false);
-  const theme = user?.preferences?.theme || 'dark';
+  const theme = user?.preferences?.theme || 'light';
 
   useEffect(() => {
     const onKey = (e) => {
@@ -32,8 +32,10 @@ export default function Layout() {
           <AssistantOrb size={22} />
           <h2 className="gradient-text" style={{ marginLeft: -14 }}>{user?.assistantName || 'GK'}</h2>
         </div>
-        {NAV.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+        {NAV.map(({ to, label, icon: Icon, group }, i) => group !== undefined ? (
+          group ? <div key={`g${i}`} className="nav-group">{group}</div> : <div key={`g${i}`} style={{ height: 8 }} />
+        ) : (
+          <NavLink key={to} to={to} end={to === '/' || to === '/admin'} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
             {({ isActive }) => (
               <>
                 {isActive && <motion.div layoutId="nav-pill" className="nav-pill" transition={{ type: 'spring', stiffness: 450, damping: 34 }} />}
@@ -78,7 +80,7 @@ export default function Layout() {
       </main>
 
       <nav className="mobile-nav">
-        {NAV.slice(0, 6).map(({ to, icon: Icon, label }) => (
+        {MOBILE_NAV.map(({ to, icon: Icon, label }) => (
           <NavLink key={to} to={to} end={to === '/'} aria-label={label}>
             <Icon size={21} />
           </NavLink>

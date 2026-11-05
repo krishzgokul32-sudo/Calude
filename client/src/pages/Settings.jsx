@@ -88,8 +88,14 @@ export default function Settings() {
         <motion.div variants={rise} className="glass card">
           <div className="card-title">Preferences</div>
           <div className="list-row">
-            <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Dark mode</div><div className="small muted">Aurora glass, easy on the eyes</div></div>
-            <Switch on={prefs.theme !== 'light'} onChange={(v) => updateUser({ preferences: { theme: v ? 'dark' : 'light' } })} label="Dark mode" />
+            <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Dark mode</div><div className="small muted">Off: clean white theme · On: aurora glass</div></div>
+            <Switch on={prefs.theme === 'dark'} onChange={(v) => updateUser({ preferences: { theme: v ? 'dark' : 'light' } })} label="Dark mode" />
+          </div>
+          <div className="list-row">
+            <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Currency</div><div className="small muted">Used on the team dashboards</div></div>
+            <select className="select" style={{ width: 120 }} value={prefs.currency || 'INR'} onChange={(e) => updateUser({ preferences: { currency: e.target.value } })} aria-label="Currency">
+              {['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD', 'AUD'].map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
           <div className="list-row">
             <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Spoken reminders</div><div className="small muted">Read reminders aloud when they fire</div></div>

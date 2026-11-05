@@ -11,7 +11,8 @@ const userSchema = new mongoose.Schema(
     anthropicKey: { type: String, select: false },
     anthropicKeyHint: { type: String, default: '' }, // last 4 characters, for display
     preferences: {
-      theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
+      theme: { type: String, enum: ['dark', 'light'], default: 'light' },
+      currency: { type: String, default: 'INR' },
       voice: { type: Boolean, default: true },
       city: { type: String, default: '' },
     },

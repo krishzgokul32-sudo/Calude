@@ -15,6 +15,12 @@ import { crudRouter } from './routes/crud.js';
 import Task from './models/Task.js';
 import Note from './models/Note.js';
 import Reminder from './models/Reminder.js';
+import Lead from './models/Lead.js';
+import Invoice from './models/Invoice.js';
+import Post from './models/Post.js';
+import Project from './models/Project.js';
+import analyticsRoutes from './routes/analytics.js';
+import connectionRoutes from './routes/integrations-admin.js';
 import { emitToUser } from './services/realtime.js';
 import { serverKeyConfigured } from './services/llm.js';
 
@@ -34,8 +40,14 @@ export function createApp() {
   app.use('/api/chat', requireAuth, chatRoutes);
   app.use('/api/bots', requireAuth, botRoutes);
   app.use('/api/dashboard', requireAuth, dashboardRoutes);
-  app.use('/api/tasks', requireAuth, crudRouter(Task, { allowed: ['title', 'description', 'status', 'priority', 'dueDate', 'tags'], onChange: changed('tasks') }));
+  app.use('/api/tasks', requireAuth, crudRouter(Task, { allowed: ['title', 'description', 'status', 'priority', 'dueDate', 'tags', 'project'], onChange: changed('tasks') }));
   app.use('/api/notes', requireAuth, crudRouter(Note, { allowed: ['title', 'content', 'color', 'pinned', 'tags'], sort: { pinned: -1, updatedAt: -1 }, onChange: changed('notes') }));
+  app.use('/api/analytics', requireAuth, analyticsRoutes);
+  app.use('/api/connections', requireAuth, connectionRoutes);
+  app.use('/api/leads', requireAuth, crudRouter(Lead, { allowed: ['name', 'company', 'email', 'phone', 'source', 'stage', 'value', 'notes'], onChange: changed('leads') }));
+  app.use('/api/invoices', requireAuth, crudRouter(Invoice, { allowed: ['number', 'client', 'amount', 'kind', 'category', 'status', 'issueDate', 'dueDate', 'paidAt'], sort: { issueDate: -1 }, onChange: changed('invoices') }));
+  app.use('/api/posts', requireAuth, crudRouter(Post, { allowed: ['title', 'platform', 'status', 'scheduledAt', 'publishedAt', 'views', 'likes', 'comments', 'shares'], onChange: changed('posts') }));
+  app.use('/api/projects', requireAuth, crudRouter(Project, { allowed: ['name', 'client', 'status', 'budget', 'deadline'], onChange: changed('projects') }));
   app.use('/api/reminders', requireAuth, crudRouter(Reminder, { allowed: ['text', 'remindAt', 'repeat', 'delivered'], sort: { remindAt: 1 }, onChange: changed('reminders') }));
 
   app.use(notFound);
