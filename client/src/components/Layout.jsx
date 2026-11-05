@@ -30,7 +30,7 @@ export default function Layout() {
       <motion.aside className="sidebar" initial={{ x: -40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 26 }}>
         <div className="brand">
           <AssistantOrb size={22} />
-          <h2 className="gradient-text" style={{ marginLeft: -14 }}>{user?.assistantName || 'Nova'}</h2>
+          <h2 className="gradient-text" style={{ marginLeft: -14 }}>{user?.assistantName || 'GK'}</h2>
         </div>
         {NAV.map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>

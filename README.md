@@ -1,6 +1,6 @@
-# ✨ Nova — Personal Assistant (end to end)
+# ✨ GK — Personal Assistant (end to end)
 
-Nova is a full-stack personal assistant. It manages your **tasks, notes and reminders**, and it acts as a **hub for all your bots**: you can create bots, connect bots you already have (Telegram, Discord, Slack, or any webhook bot you've built), and they all work through one assistant.
+GK is a full-stack personal assistant. It manages your **tasks, notes and reminders**, and it acts as a **hub for all your bots**: you can create bots, connect bots you already have (Telegram, Discord, Slack, or any webhook bot you've built), and they all work through one assistant.
 
 | Layer | Tech |
 | --- | --- |

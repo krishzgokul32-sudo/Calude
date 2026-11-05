@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true, minlength: 6, select: false },
-    assistantName: { type: String, default: 'Nova' },
+    assistantName: { type: String, default: 'GK' },
     preferences: {
       theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
       voice: { type: Boolean, default: true },

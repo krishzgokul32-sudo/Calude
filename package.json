@@ -1,7 +1,7 @@
 {
   "name": "personal-assistant",
   "private": true,
-  "description": "Nova — an end-to-end personal assistant (React + Node.js + MongoDB + Python) with a pluggable bot hub",
+  "description": "GK — an end-to-end personal assistant (React + Node.js + MongoDB + Python) with a pluggable bot hub",
   "scripts": {
     "install:all": "npm --prefix server install && npm --prefix client install && pip install -r ai-service/requirements.txt",
     "dev": "concurrently -n api,web,ai -c magenta,cyan,yellow \"npm --prefix server run dev\" \"npm --prefix client run dev\" \"cd ai-service && uvicorn app.main:app --reload --port 8000\"",

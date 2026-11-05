@@ -1,10 +1,10 @@
 # 🤖 Bot Integration Guide
 
-This guide covers how to **create bots** inside Nova and how to **connect bots you already have**, so everything runs through one personal assistant.
+This guide covers how to **create bots** inside GK and how to **connect bots you already have**, so everything runs through one personal assistant.
 
 ```
-   You ──chat──▶ Nova ──@mention / trigger / call_bot──▶ Your bots   (outbound)
-   Your bots ──POST /integrations/inbound/:botId──▶ Nova            (inbound)
+   You ──chat──▶ GK ──@mention / trigger / call_bot──▶ Your bots   (outbound)
+   Your bots ──POST /integrations/inbound/:botId──▶ GK            (inbound)
 ```
 
 ---
@@ -88,7 +88,7 @@ Working examples: [`examples/node-webhook-bot/server.js`](../examples/node-webho
 1. In Telegram, message **@BotFather** → `/newbot` → copy the token.
 2. Go to Bot Hub → Create bot → **Telegram**, paste the token, and optionally enable **"Deliver my reminders through this bot"**.
 3. Send `/start` to your bot. That chat is now **linked** to your assistant.
-4. Chat with Nova from Telegram: "add task buy milk", "@weather in Chennai"… Replies come back to Telegram, and the conversation also appears in the web app.
+4. Chat with GK from Telegram: "add task buy milk", "@weather in Chennai"… Replies come back to Telegram, and the conversation also appears in the web app.
 
 **Delivery mode:**
 - `PUBLIC_API_URL` starts with `https://`: Telegram **webhooks** are registered automatically and verified with a secret token.
