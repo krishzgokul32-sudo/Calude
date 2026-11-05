@@ -1,0 +1,18 @@
+{
+  "name": "personal-assistant",
+  "private": true,
+  "description": "Nova — an end-to-end personal assistant (React + Node.js + MongoDB + Python) with a pluggable bot hub",
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install && pip install -r ai-service/requirements.txt",
+    "dev": "concurrently -n api,web,ai -c magenta,cyan,yellow \"npm --prefix server run dev\" \"npm --prefix client run dev\" \"cd ai-service && uvicorn app.main:app --reload --port 8000\"",
+    "dev:api": "npm --prefix server run dev",
+    "dev:web": "npm --prefix client run dev",
+    "dev:ai": "cd ai-service && uvicorn app.main:app --reload --port 8000",
+    "seed": "npm --prefix server run seed",
+    "test": "npm --prefix server test && cd ai-service && python -m pytest -q",
+    "build": "npm --prefix client run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
