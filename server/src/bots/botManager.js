@@ -1,0 +1,121 @@
+import crypto from 'node:crypto';
+import axios from 'axios';
+import Bot from '../models/Bot.js';
+import BotLog from '../models/BotLog.js';
+import { builtinSkills } from './builtins.js';
+import { telegram, postDiscord, postSlack } from './connectors.js';
+import { llmEnabled, runClaude } from '../services/llm.js';
+import { emitToUser } from '../services/realtime.js';
+
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Decide whether a message should go to one of the user's bots.
+ * 1. An explicit @handle mention always wins.
+ * 2. Otherwise, the first enabled bot whose trigger word appears in the text.
+ */
+export async function findBotForMessage(userId, text) {
+  const bots = await Bot.find({ user: userId, enabled: true }).select('+apiKey');
+  const mention = text.match(/(?:^|\s)@([a-z0-9_-]{2,30})\b/i);
+  if (mention) {
+    const bot = bots.find((b) => b.handle === mention[1].toLowerCase());
+    if (bot) return { bot, text: text.replace(mention[0], ' ').trim() || text };
+  }
+  for (const bot of bots) {
+    if (bot.triggers?.some((t) => t && new RegExp(`\\b${escapeRe(t)}\\b`, 'i').test(text))) {
+      return { bot, text };
+    }
+  }
+  return null;
+}
+
+export function signPayload(secret, body) {
+  return 'sha256=' + crypto.createHmac('sha256', secret).update(body).digest('hex');
+}
+
+async function runBot(bot, text, ctx) {
+  switch (bot.type) {
+    case 'builtin': {
+      const skill = builtinSkills[bot.config?.skill];
+      if (!skill) throw new Error(`Unknown builtin skill "${bot.config?.skill}"`);
+      return skill(text, ctx);
+    }
+    case 'ai': {
+      const persona = bot.config?.systemPrompt || `You are ${bot.name}, a helpful bot.`;
+      if (!llmEnabled()) {
+        return `🤖 *${bot.name}* needs an ANTHROPIC_API_KEY on the server to think. You said: "${text}"`;
+      }
+      const history = (ctx.history || []).slice(-10);
+      const { text: reply } = await runClaude({
+        system: `${persona}\nYou are a bot inside ${ctx.user?.name || 'the user'}'s personal assistant. Keep answers concise and use Markdown.`,
+        messages: [...history, { role: 'user', content: text }],
+      });
+      return reply;
+    }
+    case 'webhook': {
+      if (!bot.config?.url) throw new Error('Webhook URL not configured');
+      const body = JSON.stringify({
+        event: 'message',
+        message: text,
+        bot: { id: bot._id, handle: bot.handle, name: bot.name },
+        user: { id: ctx.user?._id, name: ctx.user?.name },
+        conversationId: ctx.conversationId,
+        timestamp: new Date().toISOString(),
+      });
+      const { data } = await axios.post(bot.config.url, body, {
+        timeout: 10000,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-PA-Signature': signPayload(bot.apiKey, body),
+          'X-PA-Bot': bot.handle,
+          ...(bot.config.headers || {}),
+        },
+      });
+      if (typeof data === 'string') return data;
+      return data?.reply ?? data?.text ?? data?.message ?? JSON.stringify(data);
+    }
+    case 'telegram': {
+      if (!bot.config?.chatId) throw new Error('No Telegram chat linked yet — send your bot a message on Telegram first');
+      await telegram.send(bot.config.token, bot.config.chatId, text);
+      return `📨 Sent to Telegram via ${bot.name}`;
+    }
+    case 'discord':
+      await postDiscord(bot.config.webhookUrl, text);
+      return `📨 Posted to Discord via ${bot.name}`;
+    case 'slack':
+      await postSlack(bot.config.webhookUrl, text);
+      return `📨 Posted to Slack via ${bot.name}`;
+    default:
+      throw new Error(`Unsupported bot type ${bot.type}`);
+  }
+}
+
+/** Send a message to a bot, log it, update stats, return the reply text. */
+export async function dispatchToBot(bot, text, ctx = {}) {
+  const started = Date.now();
+  let output;
+  let status = 'ok';
+  try {
+    output = String(await runBot(bot, text, ctx));
+  } catch (err) {
+    status = 'error';
+    output = `⚠️ ${bot.name} failed: ${err.response?.data?.description || err.message}`;
+  }
+  const latencyMs = Date.now() - started;
+  await Promise.all([
+    BotLog.create({ bot: bot._id, user: bot.user, direction: 'out', status, input: text, output, latencyMs }),
+    Bot.updateOne(
+      { _id: bot._id },
+      { $inc: { 'stats.messages': 1, 'stats.errors': status === 'error' ? 1 : 0 }, $set: { 'stats.lastActiveAt': new Date() } }
+    ),
+  ]);
+  emitToUser(bot.user, 'bot:activity', { botId: bot._id, status, latencyMs });
+  return { reply: output, status, latencyMs };
+}
+
+/** Push a notification (e.g. a due reminder) through every bot with notify=true. */
+export async function notifyThroughBots(userId, text) {
+  const bots = await Bot.find({ user: userId, enabled: true, notify: true, type: { $in: ['telegram', 'discord', 'slack'] } });
+  await Promise.allSettled(bots.map((b) => dispatchToBot(b, text, {})));
+  return bots.length;
+}
