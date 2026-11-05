@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Save } from 'lucide-react';
+import { Save, KeyRound, Trash2, ExternalLink } from 'lucide-react';
 import { Page, Switch, rise, stagger } from '../components/ui';
 import AssistantOrb from '../components/AssistantOrb';
 import { useAuth } from '../context/AuthContext';
@@ -8,14 +8,42 @@ import { useToast } from '../context/ToastContext';
 import { api, errMsg } from '../lib/api';
 
 export default function Settings() {
-  const { user, updateUser } = useAuth();
+  const { user, setUser, updateUser } = useAuth();
   const toast = useToast();
   const [form, setForm] = useState({ name: user.name, assistantName: user.assistantName, city: user.preferences?.city || '' });
   const [health, setHealth] = useState(null);
+  const [apiKey, setApiKey] = useState('');
+  const [keyBusy, setKeyBusy] = useState(false);
+  const [keyError, setKeyError] = useState('');
 
+  const loadHealth = () => api.get('/dashboard').then((r) => setHealth(r.data.services)).catch(() => {});
   useEffect(() => {
-    api.get('/dashboard').then((r) => setHealth(r.data.services)).catch(() => {});
+    loadHealth();
   }, []);
+
+  const saveKey = async (e) => {
+    e.preventDefault();
+    setKeyBusy(true);
+    setKeyError('');
+    try {
+      const { data } = await api.put('/auth/me/api-key', { apiKey });
+      setUser(data.user);
+      setApiKey('');
+      toast('Claude connected', { type: 'success', body: 'GK will now use Claude to think.' });
+      loadHealth();
+    } catch (err) {
+      setKeyError(errMsg(err));
+    } finally {
+      setKeyBusy(false);
+    }
+  };
+
+  const removeKey = async () => {
+    const { data } = await api.delete('/auth/me/api-key');
+    setUser(data.user);
+    toast('API key removed', { type: 'info' });
+    loadHealth();
+  };
 
   const save = async (e) => {
     e.preventDefault();
@@ -30,7 +58,7 @@ export default function Settings() {
   const prefs = user.preferences || {};
   const services = [
     { key: 'mongo', name: 'MongoDB', desc: 'Stores users, conversations, tasks, notes, reminders and bots.' },
-    { key: 'claude', name: 'Claude AI brain', desc: 'Set ANTHROPIC_API_KEY on the server for full conversational AI with tool use. Otherwise a rule-based brain is used.' },
+    { key: 'claude', name: 'Claude AI brain', desc: 'Add your API key above (or set ANTHROPIC_API_KEY on the server) for full conversational AI with tool use. Otherwise a rule-based brain is used.' },
     { key: 'python', name: 'Python NLP service', desc: 'FastAPI service for sentiment, intent, entities and summaries (ai-service/).' },
   ];
 
@@ -72,6 +100,31 @@ export default function Settings() {
             <button className="btn btn-ghost" onClick={() => Notification.requestPermission().then(() => toast('Notification permission: ' + Notification.permission))}>Enable</button>
           </div>
         </motion.div>
+
+        <motion.form variants={rise} className="glass card" style={{ gridColumn: '1 / -1' }} onSubmit={saveKey}>
+          <div className="card-title">
+            <span className="row"><KeyRound size={18} /> Claude API key</span>
+            <span className="badge"><span className={`dot ${user.anthropicKeyHint ? 'on' : 'off'}`} /> {user.anthropicKeyHint ? `Connected · sk-ant-…${user.anthropicKeyHint}` : 'Not connected'}</span>
+          </div>
+          <p className="small muted" style={{ marginBottom: 14 }}>
+            Paste your key to let {user.assistantName} use Claude for real conversation. It's checked with Anthropic, stored encrypted, and never shown again.{' '}
+            <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>Get a key <ExternalLink size={12} /></a>
+          </p>
+          <div className="row-wrap">
+            <input
+              className="input mono"
+              style={{ flex: '1 1 320px' }}
+              type="password"
+              autoComplete="off"
+              placeholder={user.anthropicKeyHint ? 'Paste a new key to replace the current one' : 'sk-ant-...'}
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+            />
+            <button className="btn btn-primary" disabled={keyBusy || !apiKey.trim()}>{keyBusy ? 'Checking…' : 'Save key'}</button>
+            {user.anthropicKeyHint && <button type="button" className="btn btn-danger" onClick={removeKey}><Trash2 size={15} /> Remove</button>}
+          </div>
+          {keyError && <p className="small" style={{ color: 'var(--danger)', marginTop: 10 }}>{keyError}</p>}
+        </motion.form>
 
         <motion.div variants={rise} className="glass card" style={{ gridColumn: '1 / -1' }}>
           <div className="card-title">System status</div>

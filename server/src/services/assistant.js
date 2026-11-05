@@ -1,7 +1,7 @@
 import Conversation from '../models/Conversation.js';
 import Message from '../models/Message.js';
 import { findBotForMessage, dispatchToBot } from '../bots/botManager.js';
-import { llmEnabled, runClaude } from './llm.js';
+import { llmAvailable, runClaude } from './llm.js';
 import { localReply } from './localBrain.js';
 import { makeActions, toolDefinitions } from './actions.js';
 import { pythonAI } from './pythonAI.js';
@@ -65,8 +65,10 @@ export async function handleMessage(user, text, opts = {}) {
     } else {
       // 2) The assistant brain: Claude with tools, or the rule-based fallback
       const actions = makeActions(user, { conversationId: conversation._id });
-      const result = llmEnabled()
+      const useClaude = await llmAvailable(user);
+      const result = useClaude
         ? await runClaude({
+            user,
             system: systemPrompt(user),
             messages: [...history, { role: 'user', content: text }],
             tools: toolDefinitions,
@@ -81,7 +83,7 @@ export async function handleMessage(user, text, opts = {}) {
         user: user._id,
         role: 'assistant',
         content: result.text,
-        meta: { actions: result.actions, engine: llmEnabled() ? 'claude' : 'local' },
+        meta: { actions: result.actions, engine: useClaude ? 'claude' : 'local' },
       });
     }
   } catch (err) {

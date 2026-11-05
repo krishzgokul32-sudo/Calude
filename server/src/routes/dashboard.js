@@ -4,7 +4,7 @@ import Note from '../models/Note.js';
 import Reminder from '../models/Reminder.js';
 import Bot from '../models/Bot.js';
 import Message from '../models/Message.js';
-import { llmEnabled } from '../services/llm.js';
+import { llmAvailable } from '../services/llm.js';
 import { pythonAI } from '../services/pythonAI.js';
 
 const router = Router();
@@ -14,6 +14,7 @@ router.get('/', async (req, res) => {
   const weekAgo = new Date(Date.now() - 6 * 864e5);
   weekAgo.setHours(0, 0, 0, 0);
 
+  const claude = await llmAvailable(req.user);
   const [taskGroups, notes, upcoming, bots, perDay, aiHealth, recentTasks] = await Promise.all([
     Task.aggregate([{ $match: { user } }, { $group: { _id: '$status', n: { $sum: 1 } } }]),
     Note.countDocuments({ user }),
@@ -42,7 +43,7 @@ router.get('/', async (req, res) => {
     recentTasks,
     bots: bots.map((b) => b.toSafeJSON()),
     activity,
-    services: { claude: llmEnabled(), python: Boolean(aiHealth?.status === 'ok'), mongo: true },
+    services: { claude, python: Boolean(aiHealth?.status === 'ok'), mongo: true },
   });
 });
 

@@ -8,7 +8,7 @@ import { userFromToken } from './middleware/auth.js';
 import { handleMessage } from './services/assistant.js';
 import { startScheduler } from './services/scheduler.js';
 import { startTelegramPolling } from './bots/telegramBridge.js';
-import { llmEnabled } from './services/llm.js';
+import { serverKeyConfigured } from './services/llm.js';
 import { seedDemo, DEMO } from './services/demoSeed.js';
 
 await connectDB();
@@ -51,5 +51,5 @@ startScheduler();
 startTelegramPolling();
 
 server.listen(config.port, () => {
-  console.log(`🚀 API ready on http://localhost:${config.port}  (brain: ${llmEnabled() ? 'Claude ' + config.claudeModel : 'rule-based'})`);
+  console.log(`🚀 API ready on http://localhost:${config.port}  (server Claude key: ${serverKeyConfigured() ? 'yes' : 'no — users can add their own in Settings'})`);
 });

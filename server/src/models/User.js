@@ -7,6 +7,9 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true, minlength: 6, select: false },
     assistantName: { type: String, default: 'GK' },
+    // The user's own Anthropic API key, AES-GCM encrypted. Never sent to the browser.
+    anthropicKey: { type: String, select: false },
+    anthropicKeyHint: { type: String, default: '' }, // last 4 characters, for display
     preferences: {
       theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
       voice: { type: Boolean, default: true },
@@ -27,6 +30,7 @@ userSchema.methods.comparePassword = function (plain) {
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
+  delete obj.anthropicKey;
   return obj;
 };
 

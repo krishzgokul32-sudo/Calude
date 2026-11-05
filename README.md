@@ -34,7 +34,7 @@ GK is a full-stack personal assistant. It manages your **tasks, notes and remind
 
 **Assistant**
 - Chat in natural language. The assistant takes real actions: creates tasks, saves notes, schedules reminders, and calls bots.
-- **Claude brain** (when `ANTHROPIC_API_KEY` is set): an agentic tool-use loop with 10 tools (`create_task`, `set_reminder`, `call_bot`, `analyze_text`, …).
+- **Claude brain** (once you add your API key in **Settings**, or set `ANTHROPIC_API_KEY` on the server): an agentic tool-use loop with 10 tools (`create_task`, `set_reminder`, `call_bot`, `analyze_text`, …).
 - **Rule-based brain** (no key needed): understands the core commands, so the app works offline.
 - **Voice**: speak to it (speech-to-text) and have it read replies aloud (text-to-speech).
 - Real-time replies over Socket.IO. Conversations sync across tabs and channels.
@@ -113,9 +113,9 @@ docker compose up --build
 # open http://localhost:8080   →  demo login: demo@assistant.dev / demo1234
 ```
 
-To enable the Claude brain, copy `.env.example` to `.env` (next to `docker-compose.yml`), put your key on the `ANTHROPIC_API_KEY=` line, and run `docker compose up` again. Docker Compose reads `.env` automatically. Check `http://localhost:5000/api/health`: it shows `"claude":true` when the key was picked up.
+**Turn on the Claude brain:** sign in, open **Settings → Claude API key**, paste your key from [console.anthropic.com](https://console.anthropic.com/settings/keys) and click **Save key**. GK checks the key with Anthropic, stores it encrypted in MongoDB, and starts using it immediately. No restart needed. Each user can add their own key.
 
-> Seeing *"needs an ANTHROPIC_API_KEY on the server to think"*? The server didn't receive a key. On Windows, `ANTHROPIC_API_KEY=... docker compose up` doesn't work in PowerShell, so use the `.env` file instead.
+Prefer one key for everyone? Copy `.env.example` to `.env` (next to `docker-compose.yml`), fill in `ANTHROPIC_API_KEY=`, then run `docker compose down` and `docker compose up`. A user's own key takes priority over the server key. (On Windows, `ANTHROPIC_API_KEY=... docker compose up` doesn't work in PowerShell, so use the `.env` file.)
 
 ### Option B: Run locally
 
@@ -212,6 +212,7 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 | --- | --- | --- |
 | POST | `/auth/register` · `/auth/login` | Returns `{ token, user }` |
 | GET/PATCH | `/auth/me` 🔒 | Profile, assistant name, preferences (theme, voice, city) |
+| PUT/DELETE | `/auth/me/api-key` 🔒 | Save (verified + encrypted) or remove your own Claude API key |
 | POST | `/chat/message` 🔒 | `{ text, conversationId? }` → `{ conversation, messages:[user, reply] }` |
 | GET/DELETE | `/chat/conversations[/:id]` 🔒 | List or delete conversations |
 | GET | `/chat/conversations/:id/messages` 🔒 | Message history |
@@ -268,7 +269,8 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 | `USE_MEMORY_DB` | `false` | `true` boots an in-memory MongoDB and seeds the demo user |
 | `SEED_DEMO` | — | `true` creates the demo account on startup |
 | `JWT_SECRET` | dev value | **Must** be set in production |
-| `ANTHROPIC_API_KEY` | — | Enables the Claude brain and AI persona bots |
+| `ANTHROPIC_API_KEY` | — | Server-wide Claude key for users who haven't added their own in Settings |
+| `ENCRYPTION_KEY` | `JWT_SECRET` | Encrypts users' saved API keys. Changing it (or `JWT_SECRET` when unset) means users must re-enter their keys |
 | `CLAUDE_MODEL` | `claude-opus-5-5` | Claude model id |
 | `AI_SERVICE_URL` | `http://localhost:8000` | Python service |
 | `CLIENT_URL` | `http://localhost:5173` | CORS origin |

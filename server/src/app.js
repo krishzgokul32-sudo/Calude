@@ -16,7 +16,7 @@ import Task from './models/Task.js';
 import Note from './models/Note.js';
 import Reminder from './models/Reminder.js';
 import { emitToUser } from './services/realtime.js';
-import { llmEnabled } from './services/llm.js';
+import { serverKeyConfigured } from './services/llm.js';
 
 export function createApp() {
   const app = express();
@@ -25,7 +25,7 @@ export function createApp() {
   app.use(express.json({ limit: '1mb' }));
   if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
 
-  app.get('/api/health', (req, res) => res.json({ status: 'ok', claude: llmEnabled(), time: new Date().toISOString() }));
+  app.get('/api/health', (req, res) => res.json({ status: 'ok', claude: serverKeyConfigured(), time: new Date().toISOString() }));
 
   app.use('/api/auth', rateLimit({ windowMs: 15 * 60e3, limit: 100 }), authRoutes);
   app.use('/api/integrations', rateLimit({ windowMs: 60e3, limit: 120 }), integrationRoutes);

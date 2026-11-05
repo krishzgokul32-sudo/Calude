@@ -2,6 +2,8 @@ import { Router } from 'express';
 import User from '../models/User.js';
 import { requireAuth, signToken } from '../middleware/auth.js';
 import { seedDefaultBots } from '../services/defaultBots.js';
+import { encrypt } from '../services/secrets.js';
+import { verifyKey } from '../services/llm.js';
 
 const router = Router();
 
@@ -29,6 +31,28 @@ router.patch('/me', requireAuth, async (req, res) => {
   if (name) req.user.name = name;
   if (assistantName) req.user.assistantName = assistantName;
   if (preferences) req.user.preferences = { ...req.user.preferences.toObject(), ...preferences };
+  await req.user.save();
+  res.json({ user: req.user });
+});
+
+// Save the user's own Claude API key (checked with Anthropic first, stored encrypted).
+router.put('/me/api-key', requireAuth, async (req, res) => {
+  const apiKey = String(req.body?.apiKey || '').trim();
+  if (!/^sk-ant-[\w-]{10,}$/.test(apiKey)) return res.status(400).json({ error: 'That doesn\'t look like an Anthropic API key (it starts with "sk-ant-").' });
+  try {
+    await verifyKey(apiKey);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+  req.user.anthropicKey = encrypt(apiKey);
+  req.user.anthropicKeyHint = apiKey.slice(-4);
+  await req.user.save();
+  res.json({ user: req.user });
+});
+
+router.delete('/me/api-key', requireAuth, async (req, res) => {
+  req.user.anthropicKey = undefined;
+  req.user.anthropicKeyHint = '';
   await req.user.save();
   res.json({ user: req.user });
 });
