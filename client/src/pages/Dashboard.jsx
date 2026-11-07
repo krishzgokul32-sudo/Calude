@@ -16,7 +16,7 @@ function Ring({ value, total }) {
       <defs>
         <linearGradient id="ringGrad" x1="0" x2="1">
           <stop offset="0" stopColor="#4f8dff" />
-          <stop offset="1" stopColor="#2fd39a" />
+          <stop offset="1" stopColor="#9cc0ff" />
         </linearGradient>
       </defs>
       <circle cx="55" cy="55" r={r} stroke="var(--surface-2)" strokeWidth="10" fill="none" />

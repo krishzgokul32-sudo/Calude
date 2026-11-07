@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const BLOBS = [
   { color: '#1d4ed8', size: 520, x: ['-10%', '10%', '-5%'], y: ['-10%', '5%', '-10%'], left: '5%', top: '0%' },
   { color: '#0b1f5c', size: 440, x: ['0%', '-15%', '0%'], y: ['0%', '15%', '0%'], left: '60%', top: '10%' },
-  { color: '#047857', size: 480, x: ['5%', '-5%', '5%'], y: ['10%', '-10%', '10%'], left: '30%', top: '55%' },
+  { color: '#1e3a8a', size: 480, x: ['5%', '-5%', '5%'], y: ['10%', '-10%', '10%'], left: '30%', top: '55%' },
 ];
 
 /** Aurora gradient blobs + an interactive constellation of particles. */
