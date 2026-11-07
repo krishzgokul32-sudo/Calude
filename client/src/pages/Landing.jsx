@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Bot, Brain, Mic, Map as MapIcon, PlugZap, Shield, Workflow, LineChart, Swords } from 'lucide-react';
 import DarkWarrior from '../components/DarkWarrior';
 import ParticleSphere from '../components/ParticleSphere';
+import NeuralBrain from '../components/NeuralBrain';
+import BotArmy from '../components/BotArmy';
 
 const ARSENAL = [
   { icon: Brain, title: 'Agentic brain', text: 'GK plans, picks the right tools and finishes the job: tasks, notes, reminders, invoices.' },
@@ -44,7 +46,9 @@ export default function Landing() {
       <header className="land-nav">
         <Link to="/welcome" className="land-brand"><span className="land-sigil">GK</span>Agentic AI</Link>
         <nav>
+          <a href="#army">Army</a>
           <a href="#arsenal">Arsenal</a>
+          <a href="#memory">Memory</a>
           <a href="#how">How it works</a>
           <Link to="/login" className="btn btn-ghost">Sign in</Link>
         </nav>
@@ -88,6 +92,14 @@ export default function Landing() {
         </motion.div>
       </section>
 
+      <section id="army" className="land-section land-battle">
+        <motion.h2 initial="hidden" whileInView="show" viewport={{ once: true }} variants={up}>Assemble your <span className="gradient-text">bot army</span></motion.h2>
+        <p className="land-sub" style={{ marginBottom: 0 }}>Every bot you build stands with GK against the daily chaos.</p>
+        <motion.div className="army-frame" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.8 }}>
+          <BotArmy />
+        </motion.div>
+      </section>
+
       <section id="arsenal" className="land-section">
         <motion.h2 initial="hidden" whileInView="show" viewport={{ once: true }} variants={up}>The <span className="gradient-text">Arsenal</span></motion.h2>
         <p className="land-sub">Everything GK carries into battle for you.</p>
@@ -99,6 +111,24 @@ export default function Landing() {
               <p>{text}</p>
             </motion.article>
           ))}
+        </div>
+      </section>
+
+      <section id="memory" className="land-section">
+        <div className="land-memory">
+          <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}>
+            <span className="land-kicker"><Brain size={14} /> Memory layer</span>
+            <h2 style={{ marginTop: 16 }}>Context windows are expanding. <span className="gradient-text">Memory is the new platform.</span></h2>
+            <p className="land-sub">AI models went from reading 4K tokens to millions. GK adds memory that does not reset when the chat ends.</p>
+            <ul>
+              <li>Your notes, tasks and reminders</li>
+              <li>Every conversation and decision</li>
+              <li>Each bot&apos;s skills and history</li>
+            </ul>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, scale: 0.94 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.9 }}>
+            <NeuralBrain />
+          </motion.div>
         </div>
       </section>
 

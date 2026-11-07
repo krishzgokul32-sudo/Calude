@@ -67,6 +67,27 @@
   --glow: 0 0 30px -6px rgba(226, 87, 28, 0.85);
 }
 
+/* Gold accent, black mode: molten gold on black, from the "neural memory" look. */
+:root[data-accent='gold'],
+[data-theme='dark'][data-accent='gold'] {
+  --accent-rgb: 245, 196, 92;
+  --accent-deep-rgb: 161, 110, 18;
+  --primary: #f5c45c;
+  --primary-2: #a16e12;
+  --accent: #f5c45c;
+  --border: rgba(200, 160, 80, 0.3);
+  --border-strong: rgba(245, 196, 92, 0.55);
+  --surface-2: rgba(161, 110, 18, 0.2);
+  --grad: linear-gradient(135deg, #3d2a04 0%, #a16e12 45%, #f5c45c 100%);
+  --grad-soft: linear-gradient(135deg, rgba(161, 110, 18, 0.3), rgba(61, 42, 4, 0.2));
+  --grad-text: linear-gradient(100deg, #ffffff 0%, #ffe7b0 50%, #f5c45c 100%);
+  --btn: linear-gradient(180deg, #a8761a 0%, #8a5d0e 55%, #694607 100%);
+  --btn-hover: linear-gradient(180deg, #b5801c 0%, #966510 55%, #74500c 100%);
+  --btn-border: rgba(255, 215, 130, 0.6);
+  --edge: inset 0 1px 0 rgba(255, 225, 160, 0.14);
+  --glow: 0 0 30px -6px rgba(201, 146, 31, 0.85);
+}
+
 /* White mode: high-contrast, clean, navy + emerald accents. */
 [data-theme='light'] {
   --bg: #f3f6fa;
@@ -618,6 +639,23 @@ input, textarea, select { font: inherit; color: inherit; }
 }
 [data-theme='light'][data-accent='orange'] .nav-item .nav-pill { background: #fbeee6; border-color: #f0c9b2; }
 
+/* Gold accent, white mode: deep bronze on white (WCAG AA for text). */
+[data-theme='light'][data-accent='gold'] {
+  --accent-rgb: 146, 98, 10;
+  --accent-deep-rgb: 113, 75, 8;
+  --primary: #85590a;
+  --primary-2: #5c3d06;
+  --accent: #85590a;
+  --grad: linear-gradient(135deg, #5c3d06 0%, #85590a 55%, #c9921f 100%);
+  --grad-soft: linear-gradient(135deg, rgba(133, 89, 10, 0.09), rgba(92, 61, 6, 0.05));
+  --grad-text: linear-gradient(100deg, #2e1f03 0%, #6b4708 55%, #92620a 100%);
+  --btn: linear-gradient(180deg, #a87412 0%, #85590a 55%, #694607 100%);
+  --btn-hover: linear-gradient(180deg, #b88016 0%, #92620a 55%, #74500c 100%);
+  --btn-border: rgba(92, 61, 6, 0.6);
+  --glow: 0 6px 18px -8px rgba(133, 89, 10, 0.55);
+}
+[data-theme='light'][data-accent='gold'] .nav-item .nav-pill { background: #f8f0dc; border-color: #e6d3a6; }
+
 /* ---------- Particle sphere + floating cards (the "orbit" look) ---------- */
 .particle-sphere { position: relative; pointer-events: none; }
 .particle-sphere::before { content: ''; position: absolute; inset: 12%; border-radius: 50%; background: radial-gradient(circle, rgba(var(--accent-rgb), 0.16), transparent 70%); filter: blur(24px); }
@@ -734,3 +772,49 @@ input, textarea, select { font: inherit; color: inherit; }
 .land-final-fig { width: 170px; flex-shrink: 0; margin-bottom: -60px; }
 @media (max-width: 640px) { .land-final { flex-direction: column; text-align: center; margin: 70px 16px 30px; } .land-final-fig { margin-bottom: 0; width: 130px; } }
 .land-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; max-width: 1200px; margin: 0 auto; padding: 30px clamp(16px, 5vw, 64px) 40px; border-top: 1px solid var(--border); }
+
+/* ---------- Smoke / fog atmosphere (app-wide) ---------- */
+.smoke { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.smoke span { position: absolute; left: -50%; width: 200%; height: 70%; filter: blur(40px); opacity: 0.5; will-change: transform; }
+.smoke-a { bottom: -18%; background:
+  radial-gradient(ellipse 22% 60% at 12% 70%, rgba(120, 130, 150, 0.22), transparent 70%),
+  radial-gradient(ellipse 26% 55% at 40% 80%, rgba(var(--accent-rgb), 0.12), transparent 70%),
+  radial-gradient(ellipse 20% 50% at 68% 72%, rgba(120, 130, 150, 0.18), transparent 70%),
+  radial-gradient(ellipse 24% 60% at 90% 78%, rgba(var(--accent-rgb), 0.1), transparent 70%);
+  animation: smokeDrift 40s ease-in-out infinite alternate; }
+.smoke-b { bottom: -6%; height: 55%; background:
+  radial-gradient(ellipse 18% 50% at 25% 75%, rgba(140, 150, 170, 0.16), transparent 70%),
+  radial-gradient(ellipse 22% 45% at 55% 85%, rgba(140, 150, 170, 0.14), transparent 70%),
+  radial-gradient(ellipse 18% 50% at 82% 70%, rgba(var(--accent-rgb), 0.1), transparent 70%);
+  animation: smokeDrift 55s ease-in-out infinite alternate-reverse; }
+.smoke-c { top: -20%; height: 60%; opacity: 0.35; background:
+  radial-gradient(ellipse 25% 50% at 30% 30%, rgba(var(--accent-rgb), 0.1), transparent 70%),
+  radial-gradient(ellipse 25% 50% at 75% 20%, rgba(120, 130, 150, 0.12), transparent 70%);
+  animation: smokeDrift 70s ease-in-out infinite alternate; }
+@keyframes smokeDrift { from { transform: translateX(0); } to { transform: translateX(25%); } }
+[data-theme='light'] .smoke span { opacity: 0.35; mix-blend-mode: multiply; }
+@media (prefers-reduced-motion: reduce) { .smoke span { animation: none; } }
+
+/* ---------- Landing: memory brain + battle line ---------- */
+.land-memory { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); align-items: center; gap: 32px; text-align: left; }
+@media (max-width: 900px) { .land-memory { grid-template-columns: 1fr; text-align: center; } }
+.land-memory h2 { text-transform: uppercase; letter-spacing: 0.04em; font-size: clamp(28px, 3.4vw, 42px); line-height: 1.1; }
+.land-memory .land-sub { margin-bottom: 18px; }
+.land-memory ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; color: var(--text-2); }
+.land-memory li { display: flex; gap: 10px; align-items: baseline; }
+.land-memory li::before { content: '◆'; color: var(--primary); font-size: 10px; }
+@media (max-width: 900px) { .land-memory ul { justify-items: center; } }
+.neural-brain { display: block; margin: 0 auto; }
+
+.land-battle { max-width: 1280px; }
+.army-frame { position: relative; margin-top: 36px; border-radius: 24px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.02); }
+.bot-army { display: block; width: 100%; height: auto; font-family: inherit; }
+.army-frame::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent 20%, transparent 80%, rgba(0, 0, 0, 0.35)); }
+.army-bolt { opacity: 0; animation: armyBolt 7s infinite; }
+.army-flash { opacity: 0; animation: armyFlash 7s infinite; pointer-events: none; }
+@keyframes armyBolt { 0%, 88%, 100% { opacity: 0; } 89%, 91% { opacity: 1; } 90% { opacity: 0.2; } }
+@keyframes armyFlash { 0%, 88%, 100% { opacity: 0; } 89% { opacity: 0.12; } 91% { opacity: 0.05; } }
+.army-march { animation: armyMarch 2.4s ease-in-out infinite; }
+@keyframes armyMarch { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+.army-eye { animation: dwVisor 3.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .army-bolt, .army-flash, .army-march, .army-eye { animation: none; } }
