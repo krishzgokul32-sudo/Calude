@@ -15,6 +15,7 @@ const Bots = lazy(() => import('./pages/Bots'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Connections = lazy(() => import('./pages/Connections'));
 const McpServer = lazy(() => import('./pages/McpServer'));
+const MapPage = lazy(() => import('./pages/MapPage'));
 const AdminOverview = lazy(() => import('./pages/admin/Overview'));
 const AdminSales = lazy(() => import('./pages/admin/Sales'));
 const AdminFinance = lazy(() => import('./pages/admin/Finance'));
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="connections" element={<Connections />} />
             <Route path="mcp" element={<McpServer />} />
+            <Route path="map" element={<MapPage />} />
             <Route path="admin" element={<AdminOverview />} />
             <Route path="admin/sales" element={<AdminSales />} />
             <Route path="admin/finance" element={<AdminFinance />} />

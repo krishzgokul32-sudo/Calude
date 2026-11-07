@@ -20,8 +20,10 @@ export function errorHandler(err, req, res, next) {
     return res.status(503).json({ error: 'The service is busy. Please try again in a few seconds.', requestId: req.id });
   }
   const status = err.status || err.statusCode || 500;
-  if (status >= 500) log.error('unhandled error', { id: req.id, path: req.originalUrl, error: err.message, stack: err.stack });
-  res.status(status).json({ error: status >= 500 ? 'Internal server error' : err.message, ...(status >= 500 ? { requestId: req.id } : {}) });
+  if (status >= 500 && !err.expose) log.error('unhandled error', { id: req.id, path: req.originalUrl, error: err.message, stack: err.stack });
+  // Server errors stay generic unless the error was written to be shown (`expose: true`).
+  const message = status >= 500 && !err.expose ? 'Internal server error' : err.message;
+  res.status(status).json({ error: message, ...(status >= 500 ? { requestId: req.id } : {}) });
 }
 
 export class HttpError extends Error {

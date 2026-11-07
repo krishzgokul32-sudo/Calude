@@ -70,7 +70,7 @@ export function StatTile({ label, value, delta, upIsGood = true, foot, icon: Ico
   const good = dir === 'flat' ? 'flat' : (dir === 'up') === upIsGood ? 'up' : 'down';
   const DIcon = dir === 'up' ? ArrowUpRight : dir === 'down' ? ArrowDownRight : Minus;
   return (
-    <motion.div className="glass kpi" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -2 }} transition={{ type: 'spring', stiffness: 300, damping: 26 }}>
+    <motion.div className="glass kpi" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -4, rotateX: 4, rotateY: -3, transformPerspective: 900 }} transition={{ type: 'spring', stiffness: 300, damping: 26 }}>
       <div className="kpi-label">{Icon && <Icon size={15} />} {label}</div>
       <div className="row" style={{ alignItems: 'flex-end', gap: 12 }}>
         <div className="kpi-value">{value}</div>

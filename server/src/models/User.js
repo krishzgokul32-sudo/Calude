@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
     preferences: {
       theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
       currency: { type: String, default: 'INR' },
+      accent: { type: String, enum: ['blue', 'orange'], default: 'blue' },
       voice: { type: Boolean, default: true },
       city: { type: String, default: '' },
     },

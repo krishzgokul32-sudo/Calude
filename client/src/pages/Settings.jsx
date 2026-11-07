@@ -92,6 +92,19 @@ export default function Settings() {
             <Switch on={prefs.theme !== 'light'} onChange={(v) => updateUser({ preferences: { theme: v ? 'dark' : 'light' } })} label="Dark mode" />
           </div>
           <div className="list-row">
+            <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Accent colour</div><div className="small muted">Glow, buttons and the particle sphere</div></div>
+            <div className="row" style={{ gap: 8 }} role="radiogroup" aria-label="Accent colour">
+              {[['blue', 'Dark blue', 'linear-gradient(180deg,#2b56d6,#172f86)'], ['orange', 'Orange', 'linear-gradient(180deg,#e2571c,#93310a)']].map(([key, label, bg]) => {
+                const on = (prefs.accent || 'blue') === key;
+                return (
+                  <button key={key} role="radio" aria-checked={on} className="chip" onClick={() => updateUser({ preferences: { accent: key } })} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderColor: on ? 'var(--primary)' : undefined, boxShadow: on ? '0 0 0 2px var(--primary)' : undefined }}>
+                    <span style={{ width: 16, height: 16, borderRadius: '50%', background: bg }} /> {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="list-row">
             <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Currency</div><div className="small muted">Used on the team dashboards</div></div>
             <select className="select" style={{ width: 120 }} value={prefs.currency || 'INR'} onChange={(e) => updateUser({ preferences: { currency: e.target.value } })} aria-label="Currency">
               {['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD', 'AUD'].map((c) => <option key={c} value={c}>{c}</option>)}

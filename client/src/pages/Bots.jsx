@@ -455,7 +455,7 @@ export default function Bots() {
 
       <motion.div className="grid grid-cards" variants={stagger} initial="initial" animate="animate" key={filter}>
         {shown.map((b) => (
-          <motion.div key={b._id} variants={rise} layout className="glass bot-card" whileHover={{ y: -5 }} style={{ opacity: b.enabled ? 1 : 0.55 }}>
+          <motion.div key={b._id} variants={rise} layout className="glass bot-card" whileHover={{ y: -4, rotateX: 4, rotateY: -3, transformPerspective: 900 }} style={{ opacity: b.enabled ? 1 : 0.55 }}>
             <div className="glow" style={{ background: b.color }} />
             <div className="row">
               <motion.div

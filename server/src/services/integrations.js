@@ -95,6 +95,22 @@ export const PROVIDERS = {
       return data.name || data.email || 'LinkedIn member';
     },
   },
+  googleMaps: {
+    name: 'Google Maps',
+    icon: '🗺️',
+    description: 'Show the Map page with Google Maps and look up places, addresses and lead locations.',
+    fields: [{ key: 'apiKey', label: 'Google Maps API key', secret: true }],
+    help: [
+      'In Google Cloud Console, create a project and enable "Maps JavaScript API" and "Geocoding API".',
+      'Create an API key under Credentials.',
+      'Restrict it: Application restrictions → Websites → add your GK address (e.g. http://localhost:8080/*). The map needs this key in the browser, so the website restriction is what keeps it safe.',
+    ],
+    async test({ apiKey }) {
+      const { data } = await http.get('https://maps.googleapis.com/maps/api/geocode/json', { params: { address: 'Chennai', key: apiKey } });
+      if (data.status !== 'OK') throw new Error(data.error_message || `Google Maps said ${data.status}`);
+      return `Geocoding works · ${data.results[0].formatted_address}`;
+    },
+  },
   gmail: {
     name: 'Gmail',
     icon: '✉️',

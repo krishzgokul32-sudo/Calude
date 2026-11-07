@@ -43,7 +43,7 @@ router.patch('/me', requireAuth, async (req, res) => {
   if (name) req.user.name = name;
   if (assistantName) req.user.assistantName = assistantName;
   if (preferences && typeof preferences === 'object' && !Array.isArray(preferences)) {
-    const allowed = ['theme', 'voice', 'city', 'currency'];
+    const allowed = ['theme', 'voice', 'city', 'currency', 'accent'];
     const patch = Object.fromEntries(Object.entries(preferences).filter(([k]) => allowed.includes(k)));
     req.user.preferences = { ...req.user.preferences.toObject(), ...patch };
   }

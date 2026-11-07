@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import crypto from 'node:crypto';
 
 export const BOT_TYPES = ['builtin', 'ai', 'webhook', 'telegram', 'discord', 'slack'];
-export const BUILTIN_SKILLS = ['calculator', 'weather', 'wikipedia', 'joke', 'echo'];
+export const BUILTIN_SKILLS = ['calculator', 'weather', 'wikipedia', 'joke', 'echo', 'map'];
 
 const botSchema = new mongoose.Schema(
   {

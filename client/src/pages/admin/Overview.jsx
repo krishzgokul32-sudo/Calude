@@ -51,7 +51,7 @@ export default function Overview() {
       </div>
       <div className="team-cards">
         {teams.map((t, i) => (
-          <motion.div key={t.to} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.06 }} whileHover={{ y: -3 }}>
+          <motion.div key={t.to} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.06 }} whileHover={{ y: -4, rotateX: 4, rotateY: -3, transformPerspective: 900 }}>
             <Link to={t.to} className="glass team-card" style={{ display: 'flex' }}>
               <div className="t-head">
                 <span className="t-icon"><t.icon size={17} /></span> {t.name}

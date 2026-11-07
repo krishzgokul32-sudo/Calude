@@ -25,6 +25,7 @@ import Post from './models/Post.js';
 import Project from './models/Project.js';
 import analyticsRoutes from './routes/analytics.js';
 import connectionRoutes from './routes/integrations-admin.js';
+import mapRoutes from './routes/maps.js';
 import mcpAdminRoutes from './routes/mcpAdmin.js';
 import { mcpEndpoint } from './mcp/endpoint.js';
 import { emitToUser } from './services/realtime.js';
@@ -80,8 +81,9 @@ export function createApp() {
   app.use('/api/notes', requireAuth, crudRouter(Note, { allowed: ['title', 'content', 'color', 'pinned', 'tags'], sort: { pinned: -1, updatedAt: -1 }, onChange: changed('notes') }));
   app.use('/api/analytics', requireAuth, analyticsRoutes);
   app.use('/api/connections', requireAuth, connectionRoutes);
+  app.use('/api/maps', requireAuth, mapRoutes);
   app.use('/api/mcp-admin', requireAuth, mcpAdminRoutes);
-  app.use('/api/leads', requireAuth, crudRouter(Lead, { allowed: ['name', 'company', 'email', 'phone', 'source', 'stage', 'value', 'notes'], onChange: changed('leads') }));
+  app.use('/api/leads', requireAuth, crudRouter(Lead, { allowed: ['name', 'company', 'email', 'phone', 'city', 'source', 'stage', 'value', 'notes'], onChange: changed('leads') }));
   app.use('/api/invoices', requireAuth, crudRouter(Invoice, { allowed: ['number', 'client', 'amount', 'kind', 'category', 'status', 'issueDate', 'dueDate', 'paidAt'], sort: { issueDate: -1 }, onChange: changed('invoices') }));
   app.use('/api/posts', requireAuth, crudRouter(Post, { allowed: ['title', 'platform', 'status', 'scheduledAt', 'publishedAt', 'views', 'likes', 'comments', 'shares'], onChange: changed('posts') }));
   app.use('/api/projects', requireAuth, crudRouter(Project, { allowed: ['name', 'client', 'status', 'budget', 'deadline'], onChange: changed('projects') }));

@@ -51,7 +51,7 @@ export default function Dashboard() {
     <Page>
       <motion.div variants={stagger} initial="initial" animate="animate" className="grid">
         <motion.div variants={rise} className="glass hero">
-          <AssistantOrb size={92} state="idle" onClick={() => navigate('/chat')} />
+          <AssistantOrb size={110} state="idle" onClick={() => navigate('/chat')} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <p className="muted">{greeting()}, {user.name.split(' ')[0]} 👋</p>
             <h1>I'm <span className="gradient-text">{user.assistantName}</span>. What's next?</h1>
@@ -76,7 +76,7 @@ export default function Dashboard() {
 
         <div className="grid grid-4">
           {stats.map((s) => (
-            <motion.div key={s.label} variants={rise} whileHover={{ y: -4 }}>
+            <motion.div key={s.label} variants={rise} whileHover={{ y: -4, rotateX: 4, rotateY: -3, transformPerspective: 900 }}>
               <Link to={s.to} className="glass stat" style={{ display: 'block' }}>
                 <div className="stat-icon"><s.icon size={20} /></div>
                 <div className="value"><AnimatedNumber value={s.value} /></div>
