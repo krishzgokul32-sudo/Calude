@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Bot, Brain, Mic, Map as MapIcon, PlugZap, Shield, Workflow, LineChart, Swords } from 'lucide-react';
@@ -23,6 +24,13 @@ const STEPS = [
 
 const TITLE = ['GK', 'AGENTIC', 'AI'];
 const up = { hidden: { opacity: 0, y: 28 }, show: { opacity: 1, y: 0 } };
+
+/** Uses your own picture if client/public/hero-warrior.jpg exists, otherwise GK's drawn warrior. */
+function HeroArt() {
+  const [photo, setPhoto] = useState(true);
+  if (photo) return <img className="land-photo" src="/hero-warrior.jpg" alt="GK warrior" onError={() => setPhoto(false)} />;
+  return <DarkWarrior className="land-figure" />;
+}
 
 export default function Landing() {
   return (
@@ -68,13 +76,13 @@ export default function Landing() {
           <div className="land-halo" />
           <div className="land-sphere"><ParticleSphere size={560} density={0.9} /></div>
           <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}>
-            <DarkWarrior className="land-figure" />
+            <HeroArt />
           </motion.div>
           <div className="land-ground" />
           <motion.div className="float-card land-tag tilt-l" style={{ left: '-4%', top: '18%' }} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1 }}>
             <span className="accent-dot">✦</span> 3 tasks done while you slept
           </motion.div>
-          <motion.div className="float-card land-tag tilt-r" style={{ right: '-2%', top: '58%' }} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1.3 }}>
+          <motion.div className="float-card land-tag tilt-r" style={{ right: '-4%', top: '82%' }} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1.3 }}>
             <span className="accent-dot">@</span> @sales bot drafted 4 follow-ups
           </motion.div>
         </motion.div>

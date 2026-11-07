@@ -698,20 +698,21 @@ input, textarea, select { font: inherit; color: inherit; }
 
 .land-warrior { position: relative; display: grid; place-items: center; min-height: 600px; }
 .land-halo { position: absolute; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle, rgba(var(--accent-rgb), 0.28), rgba(var(--accent-deep-rgb), 0.12) 45%, transparent 70%); filter: blur(10px); }
-.land-sphere { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); opacity: 0.75; }
+.land-sphere { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); opacity: 0.45; }
+.land-photo { position: relative; width: min(440px, 82vw); aspect-ratio: 4 / 5; object-fit: cover; border-radius: 28px; border: 1px solid var(--border-strong); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.8), 0 0 60px -10px rgba(var(--accent-rgb), 0.4); }
 .land-figure { position: relative; width: min(420px, 82vw); height: auto; filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 30px rgba(var(--accent-rgb), 0.25)); }
 .land-ground { position: absolute; bottom: 4%; width: 70%; height: 40px; border-radius: 50%; background: radial-gradient(ellipse, rgba(var(--accent-rgb), 0.35), transparent 70%); filter: blur(6px); }
 .land-tag { position: absolute; z-index: 2; display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-size: 14px; font-weight: 500; white-space: nowrap; }
 @media (max-width: 640px) { .land-tag { display: none; } .land-warrior { min-height: 460px; overflow: hidden; } .land-sphere { transform: translate(-50%, -50%) scale(0.7); } }
 .dw-visor { animation: dwVisor 3.2s ease-in-out infinite; }
-.dw-core { animation: dwCore 2.4s ease-in-out infinite; transform-origin: 200px 262px; }
+.dw-fly { animation: dwFly 4.5s ease-in-out infinite; }
 @keyframes dwVisor { 0%, 100% { opacity: 1; } 45% { opacity: 0.55; } 50% { opacity: 1; } 53% { opacity: 0.4; } 56% { opacity: 1; } }
-@keyframes dwCore { 0%, 100% { opacity: 0.75; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1.08); } }
+@keyframes dwFly { 0%, 100% { opacity: 0.15; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-8px); } }
 
 .land-embers { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
 .land-embers span { position: absolute; bottom: -10px; width: 3px; height: 3px; border-radius: 50%; background: rgb(var(--accent-rgb)); box-shadow: 0 0 8px 2px rgba(var(--accent-rgb), 0.7); animation: ember linear infinite; opacity: 0; }
 @keyframes ember { 0% { transform: translate(0, 0); opacity: 0; } 10% { opacity: 0.9; } 100% { transform: translate(40px, -105vh); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .land-embers, .dw-visor, .dw-core { animation: none !important; } .land-embers { display: none; } }
+@media (prefers-reduced-motion: reduce) { .land-embers, .dw-visor, .dw-fly { animation: none !important; } .land-embers { display: none; } }
 
 .land-section { position: relative; max-width: 1200px; margin: 0 auto; padding: 90px clamp(16px, 5vw, 64px) 20px; text-align: center; }
 .land-section h2, .land-final h2 { font-size: clamp(32px, 4.5vw, 52px); font-weight: 800; letter-spacing: -0.02em; }
