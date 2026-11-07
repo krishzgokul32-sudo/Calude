@@ -1,0 +1,40 @@
+# Production on your own domain with automatic HTTPS.
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Needs Docker Compose 2.24+ (for !reset) and DOMAIN, ACME_EMAIL, JWT_SECRET in .env.
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      - client
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env, e.g. DOMAIN=g5tech.in}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env (Let's Encrypt expiry notices)}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+
+  client:
+    # Only Caddy talks to the web container; nothing is published on port 8080.
+    ports: !reset []
+
+  server:
+    environment:
+      CLIENT_URL: https://${DOMAIN}
+      PUBLIC_API_URL: https://${DOMAIN}
+      TRUST_PROXY: 2 # Caddy -> nginx -> API
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (openssl rand -hex 32)}
+      SEED_DEMO: ${SEED_DEMO:-false} # no public demo account unless you want one
+
+volumes:
+  caddy-data:
+  caddy-config:

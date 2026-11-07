@@ -16,11 +16,11 @@ const TYPE_INFO = {
   slack: { emoji: '💼', label: 'Slack' },
 };
 const EMOJIS = ['🤖', '🦾', '🧠', '🛰️', '🐍', '🦉', '🌦️', '🧮', '📚', '🎧', '💼', '🎮', '✈️', '🔮', '🐙', '⚡'];
-const COLORS = ['#8b5cf6', '#ec4899', '#22d3ee', '#34d399', '#f59e0b', '#fb7185', '#38bdf8', '#a3e635'];
+const COLORS = ['#4f8dff', '#2fd39a', '#94a3b8', '#8b5cf6', '#ec4899', '#22d3ee', '#f59e0b', '#fb7185'];
 const SKILL_INFO = { calculator: 'Math expressions', weather: 'Live weather (Open-Meteo)', wikipedia: 'Wikipedia summaries', joke: 'Random jokes', echo: 'Echo back (testing)' };
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
-const blank = { type: '', name: '', handle: '', avatar: '🤖', color: '#8b5cf6', description: '', triggers: '', notify: false, config: {} };
+const blank = { type: '', name: '', handle: '', avatar: '🤖', color: '#4f8dff', description: '', triggers: '', notify: false, config: {} };
 
 function CopyBox({ text, mono = true }) {
   const [copied, setCopied] = useState(false);
@@ -79,7 +79,7 @@ function ConfigFields({ form, setForm, meta }) {
         <div className="field">
           <label className="label">Personality & instructions</label>
           <textarea className="textarea" style={{ minHeight: 140 }} value={cfg.systemPrompt || ''} placeholder="You are Chef, a friendly cooking expert. Suggest quick recipes with ingredients the user already has…" onChange={(e) => set('systemPrompt', e.target.value)} />
-          <p className="small muted" style={{ marginTop: 6 }}>Powered by Claude once you add your API key in Settings.</p>
+          <p className="small muted" style={{ marginTop: 6 }}>Powered by any AI (Claude, OpenAI, Gemini, Groq…) once you add a key in Settings.</p>
         </div>
       );
     case 'webhook':
@@ -455,7 +455,7 @@ export default function Bots() {
 
       <motion.div className="grid grid-cards" variants={stagger} initial="initial" animate="animate" key={filter}>
         {shown.map((b) => (
-          <motion.div key={b._id} variants={rise} layout className="glass bot-card" whileHover={{ y: -5 }} style={{ opacity: b.enabled ? 1 : 0.55 }}>
+          <motion.div key={b._id} variants={rise} layout className="glass bot-card" whileHover={{ y: -4, rotateX: 4, rotateY: -3, transformPerspective: 900 }} style={{ opacity: b.enabled ? 1 : 0.55 }}>
             <div className="glow" style={{ background: b.color }} />
             <div className="row">
               <motion.div

@@ -6,6 +6,7 @@ import { useSocketEvent } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { api, errMsg } from '../lib/api';
 import { timeAgo } from '../lib/format';
+import { useSaving } from '../hooks/useSaving';
 
 const TIER_COLOR = { read: 'var(--status-good)', build: 'var(--series-1)', send: 'var(--status-warning)', destructive: 'var(--status-critical)' };
 
@@ -79,6 +80,7 @@ export default function McpServer() {
   const [newKey, setNewKey] = useState(null);
   const [naming, setNaming] = useState(false);
   const [keyName, setKeyName] = useState('Claude Desktop');
+  const [saving, run] = useSaving();
 
   const loadKeys = useCallback(() => api.get('/mcp-admin/keys').then((r) => setKeys(r.data.keys)), []);
   const loadLogs = useCallback(() => api.get('/mcp-admin/logs').then((r) => setLogs(r.data.logs)), []);
@@ -102,8 +104,7 @@ export default function McpServer() {
     }
   };
 
-  const createKey = async (e) => {
-    e.preventDefault();
+  const createKey = run(async () => {
     try {
       const { data } = await api.post('/mcp-admin/keys', { name: keyName });
       setNaming(false);
@@ -112,7 +113,7 @@ export default function McpServer() {
     } catch (err) {
       toast(errMsg(err), { type: 'error' });
     }
-  };
+  });
 
   const toggleKey = async (k) => {
     setKeys((ks) => ks.map((x) => (x.id === k.id ? { ...x, enabled: !k.enabled } : x)));
@@ -217,7 +218,7 @@ export default function McpServer() {
           <h3>New MCP key</h3>
           <p className="small muted" style={{ margin: '4px 0 14px' }}>Name it after the app that will use it.</p>
           <input className="input" autoFocus value={keyName} onChange={(e) => setKeyName(e.target.value)} maxLength={80} />
-          <button className="btn btn-primary" style={{ width: '100%', marginTop: 14 }}>Create key</button>
+          <button className="btn btn-primary" style={{ width: '100%', marginTop: 14 }} disabled={saving}>{saving ? 'Creating…' : 'Create key'}</button>
         </form>
       </Modal>
 

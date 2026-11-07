@@ -6,6 +6,7 @@ import AssistantOrb from './components/AssistantOrb';
 import Layout from './components/Layout';
 
 const AuthPage = lazy(() => import('./pages/AuthPage'));
+const Landing = lazy(() => import('./pages/Landing'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Chat = lazy(() => import('./pages/Chat'));
 const Tasks = lazy(() => import('./pages/Tasks'));
@@ -15,6 +16,7 @@ const Bots = lazy(() => import('./pages/Bots'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Connections = lazy(() => import('./pages/Connections'));
 const McpServer = lazy(() => import('./pages/McpServer'));
+const MapPage = lazy(() => import('./pages/MapPage'));
 const AdminOverview = lazy(() => import('./pages/admin/Overview'));
 const AdminSales = lazy(() => import('./pages/admin/Sales'));
 const AdminFinance = lazy(() => import('./pages/admin/Finance'));
@@ -34,8 +36,9 @@ export default function App() {
       ) : (
         <Suspense fallback={null}>
         <Routes>
+          <Route path="/welcome" element={<Landing />} />
           <Route path="/login" element={user ? <Navigate to="/" /> : <AuthPage />} />
-          <Route element={user ? <Layout /> : <Navigate to="/login" />}>
+          <Route element={user ? <Layout /> : <Navigate to="/welcome" />}>
             <Route index element={<Dashboard />} />
             <Route path="chat" element={<Chat />} />
             <Route path="chat/:id" element={<Chat />} />
@@ -46,6 +49,7 @@ export default function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="connections" element={<Connections />} />
             <Route path="mcp" element={<McpServer />} />
+            <Route path="map" element={<MapPage />} />
             <Route path="admin" element={<AdminOverview />} />
             <Route path="admin/sales" element={<AdminSales />} />
             <Route path="admin/finance" element={<AdminFinance />} />

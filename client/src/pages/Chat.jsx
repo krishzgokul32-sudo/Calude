@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { Plus, Send, Mic, MicOff, Trash2, Volume2, VolumeX, MessageSquare } from 'lucide-react';
 import AssistantOrb from '../components/AssistantOrb';
+import ParticleSphere from '../components/ParticleSphere';
 import { TypingDots } from '../components/ui';
 import { useAuth, useSocketEvent } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -31,46 +32,79 @@ const TOOL_LABELS = {
 // Single newlines become Markdown line breaks (except before list items / blank lines).
 const softBreaks = (t) => t.replace(/\n(?!\n|\s*[-*] |\s*\d+\. )/g, '  \n');
 
-function Message({ m, user }) {
+// Where to see the result of each action the assistant took.
+const ACTION_LINKS = { create_task: '/tasks', complete_task: '/tasks', update_task: '/tasks', set_reminder: '/reminders', create_note: '/notes', call_bot: '/bots', create_lead: '/admin/sales', create_invoice: '/admin/finance' };
+const actionDetail = (a) => {
+  const i = a.input || {};
+  return i.title || i.text || i.name || (i.handle && `@${i.handle}`) || i.query || '';
+};
+
+function ActionCard({ actions, onOpen, tilt }) {
+  const link = actions.map((a) => ACTION_LINKS[a.tool]).find(Boolean);
+  return (
+    <motion.div
+      className={`float-card ${tilt}`}
+      style={{ padding: '14px 18px', marginTop: 10, maxWidth: 440 }}
+      initial={{ opacity: 0, y: 12, rotate: 0 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2, type: 'spring', stiffness: 260, damping: 24 }}
+    >
+      <div className="row" style={{ marginBottom: 6 }}>
+        <span style={{ color: 'var(--primary)' }}>✦</span>
+        <strong>Done for you</strong>
+        <span className="spacer" />
+        <span className="small muted">{actions.length} action{actions.length > 1 ? 's' : ''}</span>
+      </div>
+      {actions.map((a, i) => (
+        <div key={i} className="change-row">
+          <span style={{ flex: 1, color: 'var(--text-2)' }}>{(TOOL_LABELS[a.tool] || a.tool).replace(/^\S+\s/, '')}</span>
+          <span className={a.ok ? 'to' : ''} style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: a.ok ? undefined : 'var(--danger)' }}>
+            {a.ok ? actionDetail(a) || '✓' : 'failed'}
+          </span>
+        </div>
+      ))}
+      {link && (
+        <button className="btn btn-primary" style={{ width: '100%', marginTop: 10 }} onClick={() => onOpen(link)}>
+          ✦ View it
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
+function Message({ m, user, index, onOpen }) {
   const isUser = m.role === 'user';
   const isBot = m.role === 'bot';
+  // A slight alternating tilt makes the conversation feel like floating cards (no tilt with reduced motion).
+  const tilt = index % 2 ? 'tilt-r' : 'tilt-l';
   return (
     <motion.div
       layout
       className={`msg ${m.role}`}
-      initial={{ opacity: 0, y: 14, scale: 0.97 }}
+      initial={{ opacity: 0, y: 16, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 28 }}
     >
-      <div
-        className="msg-avatar"
-        style={{
-          background: isUser ? 'var(--grad)' : isBot ? `${m.meta?.color || '#8b5cf6'}33` : 'var(--surface-2)',
-          border: '1px solid var(--border)',
-          color: '#fff',
-        }}
-      >
-        {isUser ? user.name[0].toUpperCase() : isBot ? m.meta?.avatar || '🤖' : <AssistantOrb size={14} />}
-      </div>
-      <div style={{ minWidth: 0 }}>
+      {!isUser && (
+        <div className="msg-avatar" style={{ background: isBot ? `${m.meta?.color || '#4f8dff'}33` : 'transparent', border: isBot ? '1px solid var(--border)' : 'none', color: '#fff' }}>
+          {isBot ? m.meta?.avatar || '🤖' : <span className="accent-dot" style={{ width: 30, height: 30 }}>✦</span>}
+        </div>
+      )}
+      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-end' : 'flex-start' }}>
         {isBot && (
           <div className="bot-tag" style={{ color: m.meta?.color }}>
             {m.meta?.botName} <span className="muted">@{m.meta?.botHandle}</span>
             {m.meta?.status === 'error' && <span className="chip-action err">error</span>}
           </div>
         )}
-        <div className="bubble">
-          {isUser ? m.content : <ReactMarkdown components={{ a: (p) => <a {...p} target="_blank" rel="noreferrer" /> }}>{softBreaks(m.content)}</ReactMarkdown>}
-        </div>
-        {m.meta?.actions?.length > 0 && (
-          <div className="msg-meta">
-            {m.meta.actions.map((a, i) => (
-              <motion.span key={i} className={`chip-action ${a.ok ? '' : 'err'}`} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.15 + i * 0.08, type: 'spring' }}>
-                {a.ok ? TOOL_LABELS[a.tool] || a.tool : `⚠️ ${a.tool}`}
-              </motion.span>
-            ))}
+        {isUser ? (
+          <div className="pill-bubble" style={{ transform: 'rotate(-1.2deg)' }}>{m.content}</div>
+        ) : (
+          <div className={`float-card bubble ${tilt}`} style={{ padding: '14px 18px' }}>
+            <ReactMarkdown components={{ a: (p) => <a {...p} target="_blank" rel="noreferrer" /> }}>{softBreaks(m.content)}</ReactMarkdown>
           </div>
         )}
+        {m.meta?.actions?.length > 0 && <ActionCard actions={m.meta.actions} onOpen={onOpen} tilt={index % 2 ? 'tilt-l' : 'tilt-r'} />}
         {isUser && m.meta?.sentiment && m.meta.sentiment.label !== 'neutral' && (
           <div className="msg-meta" style={{ justifyContent: 'flex-end' }}>
             <span className="small muted">{m.meta.sentiment.emoji} {m.meta.sentiment.label}</span>
@@ -233,22 +267,35 @@ export default function Chat() {
           </button>
         </div>
 
+        {/* The particle sphere floats behind the conversation, reacting to listening / thinking / speaking. */}
+        {messages.length > 0 && (
+          <div className="chat-backdrop" aria-hidden>
+            <ParticleSphere size={420} state={orbState} density={0.8} />
+          </div>
+        )}
         <div className="messages">
           {messages.length === 0 && !busy && (
-            <motion.div style={{ margin: 'auto', textAlign: 'center' }} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-              <AssistantOrb size={100} state={orbState} />
-              <h2 style={{ marginTop: 6 }}>How can I help, <span className="gradient-text">{user.name.split(' ')[0]}</span>?</h2>
-              <p className="muted" style={{ marginTop: 6 }}>Type, talk, or mention a bot with <code>@</code></p>
+            <motion.div style={{ margin: 'auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }} initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }}>
+              <ParticleSphere size={300} state={orbState} />
+              <h2 style={{ marginTop: -6, fontSize: 30 }}>Hi, <span className="gradient-text">{user.name.split(' ')[0]}</span></h2>
+              <p className="muted" style={{ margin: '6px 0 18px' }}>Ask anything, talk with the mic, or mention a bot with <code>@</code></p>
+              <div className="row-wrap" style={{ justifyContent: 'center', maxWidth: 640 }}>
+                {SUGGESTIONS.slice(0, 6).map((sug, i) => (
+                  <motion.button key={sug} className="chip" onClick={() => send.current(sug)} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.05 }}>
+                    {sug}
+                  </motion.button>
+                ))}
+              </div>
             </motion.div>
           )}
-          {messages.map((m) => (
-            <Message key={m._id} m={m} user={user} />
+          {messages.map((m, i) => (
+            <Message key={m._id} m={m} user={user} index={i} onOpen={(to) => navigate(to)} />
           ))}
           <AnimatePresence>
             {busy && (
               <motion.div className="msg assistant" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                <div className="msg-avatar" style={{ background: 'var(--surface-2)' }}><AssistantOrb size={14} state="thinking" /></div>
-                <div className="bubble" style={{ padding: 0 }}><TypingDots /></div>
+                <div className="msg-avatar"><span className="accent-dot" style={{ width: 30, height: 30 }}>✦</span></div>
+                <div className="float-card" style={{ padding: 0 }}><TypingDots /></div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -256,11 +303,11 @@ export default function Chat() {
         </div>
 
         <div className="composer" style={{ position: 'relative' }}>
-          {messages.length < 2 && (
+          {messages.length > 0 && messages.length < 4 && (
             <div className="suggestions">
-              {SUGGESTIONS.map((s, i) => (
-                <motion.button key={s} className="suggestion" onClick={() => send.current(s)} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  {s}
+              {SUGGESTIONS.slice(2).map((sug, i) => (
+                <motion.button key={sug} className="chip" style={{ flexShrink: 0 }} onClick={() => send.current(sug)} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                  {sug}
                 </motion.button>
               ))}
             </div>

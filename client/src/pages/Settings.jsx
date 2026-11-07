@@ -13,23 +13,33 @@ export default function Settings() {
   const [form, setForm] = useState({ name: user.name, assistantName: user.assistantName, city: user.preferences?.city || '' });
   const [health, setHealth] = useState(null);
   const [apiKey, setApiKey] = useState('');
+  const [ai, setAi] = useState({ provider: 'auto', model: '', baseUrl: '' });
+  const [providers, setProviders] = useState([]);
+  const [serverAi, setServerAi] = useState(null);
   const [keyBusy, setKeyBusy] = useState(false);
   const [keyError, setKeyError] = useState('');
 
   const loadHealth = () => api.get('/dashboard').then((r) => setHealth(r.data.services)).catch(() => {});
   useEffect(() => {
     loadHealth();
+    api.get('/auth/ai-providers').then((r) => { setProviders(r.data.providers); setServerAi(r.data.server); }).catch(() => {});
   }, []);
+  const current = providers.find((p) => p.id === user.aiProvider);
+  const picked = providers.find((p) => p.id === ai.provider);
+  const keyNeeded = !picked?.keyOptional;
+  const showBase = picked && (picked.needsBase || picked.id === 'ollama');
 
   const saveKey = async (e) => {
     e.preventDefault();
     setKeyBusy(true);
     setKeyError('');
     try {
-      const { data } = await api.put('/auth/me/api-key', { apiKey });
+      const { data } = await api.put('/auth/me/api-key', { apiKey, ...ai });
       setUser(data.user);
       setApiKey('');
-      toast('Claude connected', { type: 'success', body: 'GK will now use Claude to think.' });
+      setAi({ provider: 'auto', model: '', baseUrl: '' });
+      const name = providers.find((p) => p.id === data.user.aiProvider)?.label || 'AI';
+      toast(`${name} connected`, { type: 'success', body: `GK will now think with ${data.user.aiModel || name}.` });
       loadHealth();
     } catch (err) {
       setKeyError(errMsg(err));
@@ -58,7 +68,7 @@ export default function Settings() {
   const prefs = user.preferences || {};
   const services = [
     { key: 'mongo', name: 'MongoDB', desc: 'Stores users, conversations, tasks, notes, reminders and bots.' },
-    { key: 'claude', name: 'Claude AI brain', desc: 'Add your API key above (or set ANTHROPIC_API_KEY on the server) for full conversational AI with tool use. Otherwise a rule-based brain is used.' },
+    { key: 'claude', name: 'AI brain', desc: 'Add a key from any provider above (or set ANTHROPIC_API_KEY / AI_API_KEY on the server) for full conversational AI with tool use. Otherwise a rule-based brain is used.' },
     { key: 'python', name: 'Python NLP service', desc: 'FastAPI service for sentiment, intent, entities and summaries (ai-service/).' },
   ];
 
@@ -88,8 +98,21 @@ export default function Settings() {
         <motion.div variants={rise} className="glass card">
           <div className="card-title">Preferences</div>
           <div className="list-row">
-            <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Dark mode</div><div className="small muted">Off: clean white theme · On: aurora glass</div></div>
-            <Switch on={prefs.theme === 'dark'} onChange={(v) => updateUser({ preferences: { theme: v ? 'dark' : 'light' } })} label="Dark mode" />
+            <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Dark mode</div><div className="small muted">On: black Midnight Steel · Off: crisp white</div></div>
+            <Switch on={prefs.theme !== 'light'} onChange={(v) => updateUser({ preferences: { theme: v ? 'dark' : 'light' } })} label="Dark mode" />
+          </div>
+          <div className="list-row">
+            <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Accent colour</div><div className="small muted">Glow, buttons and the particle sphere</div></div>
+            <div className="row" style={{ gap: 8 }} role="radiogroup" aria-label="Accent colour">
+              {[['blue', 'Dark blue', 'linear-gradient(180deg,#2b56d6,#172f86)'], ['orange', 'Orange', 'linear-gradient(180deg,#e2571c,#93310a)'], ['gold', 'Gold', 'linear-gradient(180deg,#c9921f,#74500c)']].map(([key, label, bg]) => {
+                const on = (prefs.accent || 'blue') === key;
+                return (
+                  <button key={key} role="radio" aria-checked={on} className="chip" onClick={() => updateUser({ preferences: { accent: key } })} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderColor: on ? 'var(--primary)' : undefined, boxShadow: on ? '0 0 0 2px var(--primary)' : undefined }}>
+                    <span style={{ width: 16, height: 16, borderRadius: '50%', background: bg }} /> {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div className="list-row">
             <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Currency</div><div className="small muted">Used on the team dashboards</div></div>
@@ -109,25 +132,52 @@ export default function Settings() {
 
         <motion.form variants={rise} className="glass card" style={{ gridColumn: '1 / -1' }} onSubmit={saveKey}>
           <div className="card-title">
-            <span className="row"><KeyRound size={18} /> Claude API key</span>
-            <span className="badge"><span className={`dot ${user.anthropicKeyHint ? 'on' : 'off'}`} /> {user.anthropicKeyHint ? `Connected · sk-ant-…${user.anthropicKeyHint}` : 'Not connected'}</span>
+            <span className="row"><KeyRound size={18} /> AI brain · any provider</span>
+            <span className="badge">
+              <span className={`dot ${user.anthropicKeyHint || (current?.keyOptional && user.aiBaseUrl) ? 'on' : 'off'}`} />{' '}
+              {user.anthropicKeyHint || (current?.keyOptional && user.aiBaseUrl)
+                ? `${current?.label || user.aiProvider}${user.aiModel ? ` · ${user.aiModel}` : ''}${user.anthropicKeyHint ? ` · …${user.anthropicKeyHint}` : ''}`
+                : serverAi ? `Using the server's ${serverAi}` : 'Not connected'}
+            </span>
           </div>
           <p className="small muted" style={{ marginBottom: 14 }}>
-            Paste your key to let {user.assistantName} use Claude for real conversation. It's checked with Anthropic, stored encrypted, and never shown again.{' '}
-            <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>Get a key <ExternalLink size={12} /></a>
+            Use a key from Claude, OpenAI, Gemini, Groq, OpenRouter, Mistral, DeepSeek, xAI, Together, a local Ollama, or any OpenAI-compatible service.
+            The key is checked with the provider, stored encrypted, and never shown again.{' '}
+            {picked?.docs && <a href={picked.docs} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{picked.keyOptional ? `Set up ${picked.label}` : `Get a ${picked.label} key`} <ExternalLink size={12} /></a>}
           </p>
-          <div className="row-wrap">
-            <input
-              className="input mono"
-              style={{ flex: '1 1 320px' }}
-              type="password"
-              autoComplete="off"
-              placeholder={user.anthropicKeyHint ? 'Paste a new key to replace the current one' : 'sk-ant-...'}
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
-            <button className="btn btn-primary" disabled={keyBusy || !apiKey.trim()}>{keyBusy ? 'Checking…' : 'Save key'}</button>
-            {user.anthropicKeyHint && <button type="button" className="btn btn-danger" onClick={removeKey}><Trash2 size={15} /> Remove</button>}
+          <div className="ai-form">
+            <label className="field">
+              <span className="small muted">Provider</span>
+              <select className="select" value={ai.provider} onChange={(e) => setAi({ ...ai, provider: e.target.value, baseUrl: '' })}>
+                <option value="auto">Auto-detect from the key</option>
+                {providers.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+              </select>
+            </label>
+            <label className="field" style={{ gridColumn: 'span 2' }}>
+              <span className="small muted">API key{picked?.keyOptional ? ' (optional)' : ''}</span>
+              <input
+                className="input mono"
+                type="password"
+                autoComplete="off"
+                placeholder={user.anthropicKeyHint ? 'Paste a new key to replace the current one' : 'sk-ant-…, sk-…, AIza…, gsk_…, sk-or-…'}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span className="small muted">Model (optional)</span>
+              <input className="input mono" placeholder="Best default for the provider" value={ai.model} onChange={(e) => setAi({ ...ai, model: e.target.value })} />
+            </label>
+            {showBase && (
+              <label className="field" style={{ gridColumn: 'span 2' }}>
+                <span className="small muted">API address (base URL)</span>
+                <input className="input mono" placeholder={picked.base || 'https://your-provider.com/v1'} value={ai.baseUrl} onChange={(e) => setAi({ ...ai, baseUrl: e.target.value })} />
+              </label>
+            )}
+          </div>
+          <div className="row-wrap" style={{ marginTop: 12 }}>
+            <button className="btn btn-primary" disabled={keyBusy || (keyNeeded && !apiKey.trim()) || (picked?.needsBase && !ai.baseUrl.trim())}>{keyBusy ? 'Checking…' : 'Connect'}</button>
+            {(user.anthropicKeyHint || user.aiBaseUrl) && <button type="button" className="btn btn-danger" onClick={removeKey}><Trash2 size={15} /> Disconnect</button>}
           </div>
           {keyError && <p className="small" style={{ color: 'var(--danger)', marginTop: 10 }}>{keyError}</p>}
         </motion.form>

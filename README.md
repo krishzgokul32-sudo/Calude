@@ -8,7 +8,7 @@ GK is a full-stack personal assistant and business dashboard. It manages your **
 | ⚙️ Backend | **Node.js** + Express 5, Socket.IO (real-time), JWT auth, node-cron scheduler |
 | 🍃 Database | **MongoDB** + Mongoose |
 | 🐍 AI service | **Python** + FastAPI: sentiment, intent (Naive Bayes), entities, keywords, summaries |
-| 🧠 LLM brain (optional) | **Claude** (`claude-opus-5-5`) with tool use. Without an API key, a built-in rule-based brain is used |
+| 🧠 LLM brain (optional) | **Any AI provider** with tool use: Claude (`claude-opus-5-5` by default), OpenAI, Google Gemini, Groq, OpenRouter, Mistral, DeepSeek, xAI, Together, Ollama, or any OpenAI-compatible API. Without a key, a built-in rule-based brain is used |
 
 ![Business overview](docs/screenshots/admin-overview.jpg)
 
@@ -28,6 +28,7 @@ GK is a full-stack personal assistant and business dashboard. It manages your **
 - [Configuration](#-configuration)
 - [Testing](#-testing)
 - [Deploying](#-deploying)
+- [Production readiness (10,000 users)](#-production-readiness-10000-users)
 
 ---
 
@@ -35,7 +36,7 @@ GK is a full-stack personal assistant and business dashboard. It manages your **
 
 **Assistant**
 - Chat in natural language. The assistant takes real actions: creates tasks, saves notes, schedules reminders, and calls bots.
-- **Claude brain** (once you add your API key in **Settings**, or set `ANTHROPIC_API_KEY` on the server): an agentic tool-use loop with 10 tools (`create_task`, `set_reminder`, `call_bot`, `analyze_text`, …).
+- **AI brain, any provider** (once you add a key in **Settings → AI brain**, or set `ANTHROPIC_API_KEY` / `AI_API_KEY` on the server): an agentic tool-use loop with 10 tools (`create_task`, `set_reminder`, `call_bot`, `analyze_text`, …).
 - **Rule-based brain** (no key needed): understands the core commands, so the app works offline.
 - **Voice**: speak to it (speech-to-text) and have it read replies aloud (text-to-speech).
 - Real-time replies over Socket.IO. Conversations sync across tabs and channels.
@@ -131,6 +132,8 @@ GK is a full-stack personal assistant and business dashboard. It manages your **
 
 ## ⚡ Quick start
 
+> **Going live on your own domain (e.g. g5tech.in) with HTTPS?** Follow [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ### Option A: Docker (everything in one command)
 
 ```bash
@@ -138,9 +141,11 @@ docker compose up --build
 # open http://localhost:8080   →  demo login: demo@assistant.dev / demo1234
 ```
 
-**Turn on the Claude brain:** sign in, open **Settings → Claude API key**, paste your key from [console.anthropic.com](https://console.anthropic.com/settings/keys) and click **Save key**. GK checks the key with Anthropic, stores it encrypted in MongoDB, and starts using it immediately. No restart needed. Each user can add their own key.
+**Turn on the AI brain (any provider):** sign in, open **Settings → AI brain**, paste a key and click **Connect**. GK recognises the provider from the key (`sk-ant-` Claude, `sk-` OpenAI, `AIza` Gemini, `gsk_` Groq, `sk-or-` OpenRouter, `xai-` xAI) or you pick it from the list (Mistral, DeepSeek, Together, Ollama, or **Other** for any OpenAI-compatible API with its base URL). Leave **Model** blank for a good default. GK checks the key with the provider, stores it encrypted in MongoDB, and starts using it immediately. No restart needed. Each user can use a different provider.
 
-Prefer one key for everyone? Copy `.env.example` to `.env` (next to `docker-compose.yml`), fill in `ANTHROPIC_API_KEY=`, then run `docker compose down` and `docker compose up`. A user's own key takes priority over the server key. (On Windows, `ANTHROPIC_API_KEY=... docker compose up` doesn't work in PowerShell, so use the `.env` file.)
+For **Ollama** on your own computer: pick *Ollama*, leave the key empty, and GK reaches it at `http://host.docker.internal:11434/v1`. In production builds, private addresses are blocked unless you set `ALLOW_PRIVATE_WEBHOOKS=true`.
+
+Prefer one key for everyone? Copy `.env.example` to `.env` (next to `docker-compose.yml`), fill in `ANTHROPIC_API_KEY=` (Claude) or `AI_API_KEY=` (any other provider, plus optional `AI_PROVIDER`, `AI_MODEL`, `AI_BASE_URL`), then run `docker compose down` and `docker compose up`. A user's own key takes priority over the server key. (On Windows, `ANTHROPIC_API_KEY=... docker compose up` doesn't work in PowerShell, so use the `.env` file.)
 
 ### Option B: Run locally
 
@@ -238,9 +243,11 @@ Ready-to-run examples are in [`examples/`](examples/): a Node webhook bot, a Pyt
 3. Click **New key**, name it after the app, and copy the URL. **The URL is a password** and is shown only once.
 4. Connect your app (the page shows these with your key filled in):
 
+The connection URL looks like `http://localhost:8080/api/mcp/gk_mcp_…` with Docker, or `http://localhost:5000/api/mcp/gk_mcp_…` with `npm run dev`. The MCP page always shows the right one.
+
 | App | How |
 | --- | --- |
-| Claude Code | `claude mcp add --transport http --scope user gk "http://localhost:5000/api/mcp/<your-key>"`, then `claude mcp list` |
+| Claude Code | `claude mcp add --transport http --scope user gk "<connection URL>"`, then `claude mcp list` |
 | Claude Desktop (GK on localhost) | Settings → Developer → Edit Config, add `"gk": { "command": "npx", "args": ["-y", "mcp-remote", "<url>"] }` under `mcpServers`, then restart Claude Desktop |
 | Claude Desktop or web (GK deployed on https) | Settings → Connectors → Add custom connector → paste the URL, leave the OAuth fields empty |
 | Cursor | `~/.cursor/mcp.json` → `{ "mcpServers": { "gk": { "url": "<url>" } } }` |
@@ -270,7 +277,8 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 | --- | --- | --- |
 | POST | `/auth/register` · `/auth/login` | Returns `{ token, user }` |
 | GET/PATCH | `/auth/me` 🔒 | Profile, assistant name, preferences (theme, voice, city) |
-| PUT/DELETE | `/auth/me/api-key` 🔒 | Save (verified + encrypted) or remove your own Claude API key |
+| GET | `/auth/ai-providers` 🔒 | The AI providers GK supports |
+| PUT/DELETE | `/auth/me/api-key` 🔒 | Save (verified + encrypted) or remove your own AI key: `{ provider?, apiKey, model?, baseUrl? }` |
 | POST | `/chat/message` 🔒 | `{ text, conversationId? }` → `{ conversation, messages:[user, reply] }` |
 | GET/DELETE | `/chat/conversations[/:id]` 🔒 | List or delete conversations |
 | GET | `/chat/conversations/:id/messages` 🔒 | Message history |
@@ -318,15 +326,21 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 │       ├── mcp/               MCP server: catalog, keys, settings, tools, endpoint
 │       ├── models/            User, Conversation, Message, Task, Note, Reminder, Bot, BotLog,
 │       │                      Lead, Invoice, Post, Project, Integration
-│       ├── routes/            auth, chat, bots, integrations, integrations-admin (Connections), analytics, dashboard, crud
+│       ├── middleware/        auth (cached sign-in), limits (shared rate limits), idempotency, requestContext, errors
+│       ├── routes/            health (live/ready/metrics), auth, chat, bots, integrations, integrations-admin (Connections), analytics, dashboard, crud
 │       ├── services/          assistant (orchestrator), llm (Claude), actions (tools), localBrain,
 │       │                      scheduler, timeParser, pythonAI, realtime, defaultBots, demoSeed,
 │       │                      analytics, sampleData, integrations (tool checks), secrets (encryption)
+│       │                      resilience (retry, circuit breaker, leases), cache, aiQuota, urlGuard,
+│       │                      rateLimitStore, logger, metrics
 │       └── bots/              botManager (routing + dispatch), builtins, calculator,
 │                              connectors (Telegram/Discord/Slack), telegramBridge
 ├── ai-service/                Python FastAPI NLP service (+ pytest tests)
 ├── examples/                  Sample bots to connect (Node + Python)
-├── docs/                      BOT_INTEGRATION.md, screenshots
+├── docs/                      BOT_INTEGRATION.md, PRODUCTION_READINESS.md, RUNBOOK.md, screenshots
+├── loadtest/                  k6 load test + quick autocannon benchmark
+├── scripts/                   backup.sh, restore.sh (MongoDB)
+├── .github/workflows/ci.yml   Tests, build and lint on every push
 └── docker-compose.yml         mongo + ai-service + server + client
 ```
 
@@ -343,11 +357,22 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 | `SEED_DEMO` | — | `true` creates the demo account on startup |
 | `JWT_SECRET` | dev value | **Must** be set in production |
 | `ANTHROPIC_API_KEY` | — | Server-wide Claude key for users who haven't added their own in Settings |
+| `AI_API_KEY` | — | Server-wide key for any other provider (takes priority over `ANTHROPIC_API_KEY` when set) |
+| `AI_PROVIDER` | guessed from key | `openai`, `gemini`, `groq`, `openrouter`, `mistral`, `deepseek`, `xai`, `together`, `ollama`, `custom` |
+| `AI_MODEL` | provider default | Model name, e.g. `gpt-4o-mini`, `llama-3.3-70b-versatile` |
+| `AI_BASE_URL` | provider default | API address, required for `custom` (e.g. `https://my-llm.example.com/v1`) |
 | `ENCRYPTION_KEY` | `JWT_SECRET` | Encrypts users' saved API keys. Changing it (or `JWT_SECRET` when unset) means users must re-enter their keys |
 | `CLAUDE_MODEL` | `claude-opus-5-5` | Claude model id |
 | `AI_SERVICE_URL` | `http://localhost:8000` | Python service |
 | `CLIENT_URL` | `http://localhost:5173` | CORS origin |
-| `PUBLIC_API_URL` | `http://localhost:5000` | Public URL of the API. If it's `https://…`, Telegram uses webhooks; otherwise the server long-polls Telegram, which works on localhost |
+| `PUBLIC_API_URL` | `http://localhost:5000` (Docker: `:8080`) | Public URL of the API. If it's `https://…`, Telegram uses webhooks; otherwise the server long-polls Telegram, which works on localhost |
+| `TRUST_PROXY` | — (Docker: `1`) | Number of proxies in front of the API, so client IPs (and IP rate limits) are correct |
+| `API_RATE_LIMIT` | `300` | API requests per minute per user (or IP when signed out) |
+| `AI_DAILY_LIMIT` | `200` | Claude messages per user per day; `0` = unlimited |
+| `MONGO_POOL_SIZE` | `50` | DB connections per API process; keep `copies × pool` below your DB's limit |
+| `METRICS_TOKEN` | — | Bearer token for `/api/health/metrics` outside localhost |
+| `LOG_FORMAT` / `LOG_LEVEL` | JSON in production | Structured logs with request IDs |
+| `ALLOW_PRIVATE_WEBHOOKS` | `false` in production | Allow bot webhooks to private network addresses |
 
 `client/.env`: `VITE_API_URL` (leave it empty in development; Vite proxies `/api`).
 
@@ -356,17 +381,41 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 ## 🧪 Testing
 
 ```bash
-npm test                       # server unit tests + python tests
-npm --prefix server test       # calculator, time parser, intents, signatures
+npm test                                                        # server + python tests
+cd server && TEST_MONGO_URI=mongodb://127.0.0.1:27017 npm test  # + integration tests on a real MongoDB
 cd ai-service && python -m pytest -q
+node loadtest/quick-bench.mjs http://localhost:5000             # quick load test (needs autocannon)
+k6 run loadtest/k6-load.js                                      # full load test, against staging
 ```
 
+GitHub Actions (`.github/workflows/ci.yml`) runs the server tests on a real MongoDB, boots the API, lints and builds the client, and runs the Python tests on every push.
+
 ---
+
+## 🛡️ Production readiness (10,000 users)
+
+GK was checked against the **TRACEN "10,000 users. Will your app survive?"** guide, section by section. The full report, with before/after load-test numbers, is in **[docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md)**, and the outage runbook is in **[docs/RUNBOOK.md](docs/RUNBOOK.md)**.
+
+| | |
+|---|---|
+| Analytics endpoint | 44 → **844 req/s**, p99 1,574 → **93 ms** |
+| One API process (4-core sandbox) | ceiling about **720–740 req/s**; p95 under 500 ms up to ~200 concurrent; **0 errors** in an 800-connection spike |
+| Two API copies together | live updates, rate limits, reminders (exactly once) and Telegram failover verified |
+| Guide checklist | **21 / 31** verified; the rest need your server and accounts (steps in the report) |
+
+Highlights:
+- Rate limits stored in MongoDB, shared across server copies: per user, plus a brute-force login limit.
+- Idempotency keys, so a repeated request never runs twice.
+- Atomic reminder delivery and a Telegram lease, so nothing is sent twice.
+- Circuit breaker, retries with jitter, and timeouts everywhere.
+- Per-user caches that clear on every write, plus a per-user daily cap on AI messages.
+- Health, readiness and metrics endpoints, structured logs with request IDs, and an error boundary in the app.
+- Graceful shutdown, Docker health checks and memory limits, and backup + tested restore scripts.
 
 ## ☁️ Deploying
 
 - **Database:** MongoDB Atlas (set `MONGO_URI`).
-- **API:** any Node host (Render, Railway, Fly.io, a VPS). Set `JWT_SECRET`, `CLIENT_URL` and `PUBLIC_API_URL=https://your-api` (this enables Telegram webhooks).
+- **API:** any Node host (Render, Railway, Fly.io, a VPS). Set `JWT_SECRET` (32+ random characters), `CLIENT_URL`, `PUBLIC_API_URL=https://your-api` (this enables Telegram webhooks), `TRUST_PROXY=1` behind a proxy, and `SEED_DEMO=false`. Point the platform's health check at `/api/health/ready`.
 - **Python service:** any container host. Set `AI_SERVICE_URL` on the API.
 - **Client:** `npm run build` and serve `client/dist` (Netlify, Vercel, nginx). Set `VITE_API_URL=https://your-api` at build time, or use the provided nginx proxy config.
 

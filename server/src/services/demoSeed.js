@@ -10,7 +10,13 @@ export const DEMO = { email: 'demo@assistant.dev', password: 'demo1234' };
 /** Create the demo account (demo@assistant.dev / demo1234) if it doesn't exist. */
 export async function seedDemo() {
   if (await User.exists({ email: DEMO.email })) return false;
-  const user = await User.create({ name: 'Demo User', ...DEMO, preferences: { city: 'Chennai' } });
+  let user;
+  try {
+    user = await User.create({ name: 'Demo User', ...DEMO, preferences: { city: 'Chennai' } });
+  } catch (err) {
+    if (err.code === 11000) return false; // another instance seeded it at the same moment
+    throw err;
+  }
   await seedDefaultBots(user._id);
   await Task.insertMany([
     { user: user._id, title: 'Design the onboarding flow', priority: 'high', status: 'in_progress' },

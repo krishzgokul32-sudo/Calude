@@ -1,9 +1,18 @@
 import { motion } from 'framer-motion';
+import ParticleSphere from './ParticleSphere';
 
 /**
  * The assistant's animated "face". States: idle | thinking | listening | speaking.
  */
 export default function AssistantOrb({ size = 120, state = 'idle', onClick }) {
+  // Large orbs render as the particle sphere; small ones (sidebar, avatars) stay a polished bead.
+  if (size >= 60) {
+    return (
+      <div className="orb-wrap" style={{ width: size * 1.8, height: size * 1.8, cursor: onClick ? 'pointer' : 'default' }} onClick={onClick}>
+        <ParticleSphere size={Math.round(size * 1.8)} state={state} />
+      </div>
+    );
+  }
   const pulse = {
     idle: { scale: [1, 1.04, 1], transition: { duration: 4, repeat: Infinity, ease: 'easeInOut' } },
     thinking: { scale: [1, 0.92, 1.06, 1], rotate: [0, 180, 360], transition: { duration: 1.6, repeat: Infinity, ease: 'easeInOut' } },

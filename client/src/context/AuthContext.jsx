@@ -20,8 +20,9 @@ export function AuthProvider({ children }) {
 
   // Theme follows the user's preference.
   useEffect(() => {
-    document.documentElement.dataset.theme = user?.preferences?.theme || localStorage.getItem('pa_theme') || 'light';
-  }, [user?.preferences?.theme]);
+    document.documentElement.dataset.theme = user?.preferences?.theme || localStorage.getItem('pa_theme') || 'dark';
+    document.documentElement.dataset.accent = user?.preferences?.accent || localStorage.getItem('pa_accent') || 'blue';
+  }, [user?.preferences?.theme, user?.preferences?.accent]);
 
   // One authenticated socket per session for live updates.
   useEffect(() => {
@@ -52,7 +53,12 @@ export function AuthProvider({ children }) {
   const updateUser = useCallback(async (patch) => {
     const { data } = await api.patch('/auth/me', patch);
     setUser(data.user);
-    if (data.user.preferences?.theme) localStorage.setItem('pa_theme', data.user.preferences.theme);
+    try {
+      if (data.user.preferences?.theme) localStorage.setItem('pa_theme', data.user.preferences.theme);
+      if (data.user.preferences?.accent) localStorage.setItem('pa_accent', data.user.preferences.accent);
+    } catch {
+      /* storage unavailable */
+    }
   }, []);
 
   return <AuthContext.Provider value={{ user, setUser, loading, socket, authenticate, logout, updateUser }}>{children}</AuthContext.Provider>;

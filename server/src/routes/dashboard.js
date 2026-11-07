@@ -6,15 +6,21 @@ import Bot from '../models/Bot.js';
 import Message from '../models/Message.js';
 import { llmAvailable } from '../services/llm.js';
 import { pythonAI } from '../services/pythonAI.js';
+import { cache } from '../services/cache.js';
 
 const router = Router();
 
 router.get('/', async (req, res) => {
-  const user = req.user._id;
+  // Cached briefly per user (guide §04); any write clears it through the data:changed event.
+  res.json(await cache.getOrLoad(req.user._id, 'dashboard', 15_000, () => build(req.user)));
+});
+
+async function build(reqUser) {
+  const user = reqUser._id;
   const weekAgo = new Date(Date.now() - 6 * 864e5);
   weekAgo.setHours(0, 0, 0, 0);
 
-  const claude = await llmAvailable(req.user);
+  const claude = await llmAvailable(reqUser);
   const [taskGroups, notes, upcoming, bots, perDay, aiHealth, recentTasks] = await Promise.all([
     Task.aggregate([{ $match: { user } }, { $group: { _id: '$status', n: { $sum: 1 } } }]),
     Note.countDocuments({ user }),
@@ -36,7 +42,7 @@ router.get('/', async (req, res) => {
     return { day: d.toLocaleDateString('en-US', { weekday: 'short' }), count: perDay.find((p) => p._id === key)?.n || 0 };
   });
 
-  res.json({
+  return {
     tasks,
     notes,
     upcoming,
@@ -44,7 +50,7 @@ router.get('/', async (req, res) => {
     bots: bots.map((b) => b.toSafeJSON()),
     activity,
     services: { claude, python: Boolean(aiHealth?.status === 'ok'), mongo: true },
-  });
-});
+  };
+}
 
 export default router;

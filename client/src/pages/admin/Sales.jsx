@@ -55,6 +55,7 @@ export default function Sales() {
           { key: 'company', label: 'Company' },
           { key: 'email', label: 'Email', inTable: false },
           { key: 'phone', label: 'Phone', inTable: false },
+          { key: 'city', label: 'City' },
           { key: 'source', label: 'Source', type: 'select', options: SOURCES, render: (v) => <span style={{ textTransform: 'capitalize' }}>{v}</span> },
           { key: 'stage', label: 'Stage', type: 'select', options: STAGES, render: (v) => <StatusPill value={v} color={STAGE_COLOR[v]} /> },
           { key: 'value', label: `Deal value (${cur})`, type: 'number', render: (v) => money(v) },

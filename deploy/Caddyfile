@@ -1,0 +1,22 @@
+# Public entry point for GK. Caddy gets and renews free HTTPS certificates (Let's Encrypt)
+# for your domain automatically, and forwards everything (pages, /api, /socket.io) to the
+# GK web container. Set DOMAIN in .env (for example DOMAIN=g5tech.in).
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	reverse_proxy client:80
+}
+
+# www.g5tech.in -> g5tech.in
+www.{$DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}

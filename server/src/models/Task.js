@@ -24,4 +24,8 @@ taskSchema.pre('findOneAndUpdate', function () {
   if (status) this.set({ completedAt: status === 'done' ? new Date() : null });
 });
 
+// Indexes match the real queries (guide §01: slow queries).
+taskSchema.index({ user: 1, status: 1, createdAt: -1 });
+taskSchema.index({ user: 1, completedAt: -1 });
+
 export default mongoose.model('Task', taskSchema);

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSaving } from '../hooks/useSaving';
 import { NavLink } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Pencil, Trash2, Search, Sparkles } from 'lucide-react';
@@ -124,6 +125,7 @@ export function RecordsTable({ title, endpoint, fields, defaults = {}, sort, sea
   const [rows, setRows] = useState([]);
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState(null);
+  const [saving, run] = useSaving();
 
   const load = useCallback(() => api.get(endpoint).then((r) => setRows(sort ? [...r.data].sort(sort) : r.data)), [endpoint, sort]);
   useEffect(() => {
@@ -131,8 +133,7 @@ export function RecordsTable({ title, endpoint, fields, defaults = {}, sort, sea
   }, [load]);
   useSocketEvent('data:changed', load);
 
-  const save = async (e) => {
-    e.preventDefault();
+  const save = run(async () => {
     const body = {};
     for (const f of fields) {
       let v = editing[f.key];
@@ -148,11 +149,15 @@ export function RecordsTable({ title, endpoint, fields, defaults = {}, sort, sea
     } catch (err) {
       toast(errMsg(err), { type: 'error' });
     }
-  };
+  });
 
   const remove = async (row) => {
     if (!confirm('Delete this record?')) return;
-    await api.delete(`${endpoint}/${row._id}`);
+    try {
+      await api.delete(`${endpoint}/${row._id}`);
+    } catch (err) {
+      toast(errMsg(err), { type: 'error' });
+    }
     load();
   };
 
@@ -230,7 +235,7 @@ export function RecordsTable({ title, endpoint, fields, defaults = {}, sort, sea
                 </div>
               ))}
             </div>
-            <button className="btn btn-primary" style={{ width: '100%', marginTop: 18 }}>Save</button>
+            <button className="btn btn-primary" style={{ width: '100%', marginTop: 18 }} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
           </form>
         )}
       </Modal>

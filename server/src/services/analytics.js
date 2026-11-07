@@ -39,10 +39,13 @@ function makeBuckets(days, now = new Date()) {
 
 function series(buckets, items, dateOf, valueOf = () => 1) {
   const out = buckets.map(() => 0);
+  const first = buckets[0].start.getTime();
+  const last = buckets[buckets.length - 1].end.getTime();
   for (const it of items) {
     const d = dateOf(it);
     if (!d) continue;
     const t = new Date(d).getTime();
+    if (t < first || t >= last) continue;
     const i = buckets.findIndex((b) => t >= b.start.getTime() && t < b.end.getTime());
     if (i >= 0) out[i] += valueOf(it);
   }
@@ -66,8 +69,8 @@ const labels = (buckets) => buckets.map((b) => b.label);
 
 export async function salesAnalytics(user, days) {
   const p = periods(days);
-  const leads = await Lead.find({ user, createdAt: { $gte: p.prevFrom } }).lean();
-  const all = await Lead.find({ user }).lean();
+  const all = await Lead.find({ user }).select('stage source value createdAt updatedAt').lean();
+  const leads = all.filter((l) => l.createdAt >= p.prevFrom);
   const cur = leads.filter((l) => inRange(l.createdAt, p.from, p.to));
   const prev = leads.filter((l) => inRange(l.createdAt, p.prevFrom, p.prevTo));
   const won = (xs) => xs.filter((l) => l.stage === 'won');
@@ -103,7 +106,7 @@ export async function salesAnalytics(user, days) {
 
 export async function financeAnalytics(user, days) {
   const p = periods(days);
-  const all = await Invoice.find({ user }).lean();
+  const all = await Invoice.find({ user }).select('kind status amount category issueDate paidAt').lean();
   const revenueIn = (from, to) => sum(all.filter((i) => i.kind === 'income' && i.status === 'paid' && inRange(i.paidAt, from, to)), (i) => i.amount);
   const expenseIn = (from, to) => sum(all.filter((i) => i.kind === 'expense' && inRange(i.issueDate, from, to)), (i) => i.amount);
   const revenue = revenueIn(p.from, p.to);
@@ -138,7 +141,7 @@ export async function financeAnalytics(user, days) {
 
 export async function contentAnalytics(user, days) {
   const p = periods(days);
-  const all = await Post.find({ user }).lean();
+  const all = await Post.find({ user }).select('title platform status views likes comments shares publishedAt scheduledAt').lean();
   const published = (from, to) => all.filter((x) => x.status === 'published' && inRange(x.publishedAt, from, to));
   const cur = published(p.from, p.to);
   const prev = published(p.prevFrom, p.prevTo);
@@ -168,7 +171,10 @@ export async function contentAnalytics(user, days) {
 
 export async function projectAnalytics(user, days) {
   const p = periods(days);
-  const [projects, tasks] = await Promise.all([Project.find({ user }).lean(), Task.find({ user }).lean()]);
+  const [projects, tasks] = await Promise.all([
+    Project.find({ user }).select('name client status deadline budget').lean(),
+    Task.find({ user }).select('status project dueDate completedAt updatedAt').lean(),
+  ]);
   const doneIn = (from, to) => tasks.filter((t) => t.status === 'done' && inRange(t.completedAt || t.updatedAt, from, to));
   const now = new Date();
   const overdue = tasks.filter((t) => t.status !== 'done' && t.dueDate && new Date(t.dueDate) < now);

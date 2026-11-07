@@ -10,6 +10,7 @@ const leadSchema = new mongoose.Schema(
     company: { type: String, default: '' },
     email: { type: String, default: '' },
     phone: { type: String, default: '' },
+    city: { type: String, default: '', trim: true, maxlength: 120 },
     source: { type: String, enum: LEAD_SOURCES, default: 'other' },
     stage: { type: String, enum: LEAD_STAGES, default: 'new' },
     value: { type: Number, default: 0, min: 0 },
@@ -17,5 +18,8 @@ const leadSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+leadSchema.index({ user: 1, createdAt: -1 });
+leadSchema.index({ user: 1, stage: 1 });
 
 export default mongoose.model('Lead', leadSchema);

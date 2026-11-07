@@ -12,7 +12,7 @@ export default function Layout() {
   const { user, logout, updateUser } = useAuth();
   const location = useLocation();
   const [palette, setPalette] = useState(false);
-  const theme = user?.preferences?.theme || 'light';
+  const theme = user?.preferences?.theme || 'dark';
 
   useEffect(() => {
     const onKey = (e) => {

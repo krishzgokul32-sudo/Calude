@@ -12,13 +12,14 @@ const ago = (days) => new Date(Date.now() - days * DAY - rand(0, DAY));
 // Skewed toward recent days, like a growing business.
 const recent = (max) => Math.floor(max * Math.random() ** 1.7);
 
+const CITIES = ['Chennai', 'Bengaluru', 'Mumbai', 'Coimbatore', 'Hyderabad', 'New Delhi', 'Kochi', 'Pune', 'Madurai'];
 const NAMES = ['Aarav Shah', 'Priya Nair', 'Rahul Verma', 'Ananya Iyer', 'Vikram Rao', 'Sneha Pillai', 'Karthik Raj', 'Divya Menon', 'Arjun Das', 'Meera Kapoor', 'Rohan Gupta', 'Isha Reddy'];
 const COMPANIES = ['Bloom Studio', 'Nimbus Labs', 'Spice Route Foods', 'Orbit Fitness', 'Kaveri Textiles', 'Pixel Forge', 'GreenLeaf Organics', 'UrbanNest Realty'];
 const TITLES = ['5 tips to grow on Instagram', 'Behind the scenes: our studio', 'Client success story', 'How we plan a launch', 'Weekly product demo', 'Founder Q&A', 'Top tools we use', 'Before & after reel', 'Customer testimonial', 'Industry news roundup'];
 
 export async function hasBusinessData(user) {
-  const counts = await Promise.all([Lead, Invoice, Post, Project].map((M) => M.countDocuments({ user })));
-  return counts.some(Boolean);
+  const found = await Promise.all([Lead, Invoice, Post, Project].map((M) => M.exists({ user })));
+  return found.some(Boolean);
 }
 
 export async function createSampleData(user) {
@@ -35,6 +36,7 @@ export async function createSampleData(user) {
       company: pick(COMPANIES),
       email: '',
       source: pick(LEAD_SOURCES),
+      city: pick(CITIES),
       stage,
       value: rand(8, 120) * 1000,
       createdAt: created,

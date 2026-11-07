@@ -100,7 +100,7 @@ export default function Connections() {
         {providers.map((p) => {
           const conn = connections[p.key];
           return (
-            <motion.div key={p.key} variants={rise} className="glass team-card" whileHover={{ y: -3 }}>
+            <motion.div key={p.key} variants={rise} className="glass team-card" whileHover={{ y: -4, rotateX: 4, rotateY: -3, transformPerspective: 900 }}>
               <div className="t-head">
                 <span className="t-icon" style={{ fontSize: 18 }}>{p.icon}</span>
                 <span style={{ flex: 1 }}>{p.name}</span>

@@ -57,6 +57,15 @@ export const builtinSkills = {
     }
   },
 
+  async map(text, ctx) {
+    const q = text.replace(/^(where is|find|show( me)?|map( of)?|locate)\s+/i, '').replace(/[?]/g, '').trim();
+    if (!q) return 'Which place? Try `@map Marina Beach, Chennai`';
+    const { geocode } = await import('../services/geo.js');
+    const place = await geocode(ctx?.user?._id, q);
+    if (!place) return `I couldn't find "${q}" on the map.`;
+    return `📍 **${place.name}**\n${place.lat.toFixed(5)}, ${place.lng.toFixed(5)} · [Open in Google Maps](${place.link})`;
+  },
+
   async joke() {
     return JOKES[Math.floor(Math.random() * JOKES.length)];
   },

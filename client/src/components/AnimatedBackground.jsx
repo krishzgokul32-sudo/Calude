@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 const BLOBS = [
-  { color: '#7c3aed', size: 520, x: ['-10%', '10%', '-5%'], y: ['-10%', '5%', '-10%'], left: '5%', top: '0%' },
-  { color: '#db2777', size: 440, x: ['0%', '-15%', '0%'], y: ['0%', '15%', '0%'], left: '60%', top: '10%' },
-  { color: '#0891b2', size: 480, x: ['5%', '-5%', '5%'], y: ['10%', '-10%', '10%'], left: '30%', top: '55%' },
+  { color: 'rgba(var(--accent-deep-rgb),0.9)', size: 520, x: ['-10%', '10%', '-5%'], y: ['-10%', '5%', '-10%'], left: '5%', top: '0%' },
+  { color: 'rgba(var(--accent-deep-rgb),0.45)', size: 440, x: ['0%', '-15%', '0%'], y: ['0%', '15%', '0%'], left: '60%', top: '10%' },
+  { color: 'rgba(var(--accent-deep-rgb),0.7)', size: 480, x: ['5%', '-5%', '5%'], y: ['10%', '-10%', '10%'], left: '30%', top: '55%' },
 ];
 
 /** Aurora gradient blobs + an interactive constellation of particles. */
@@ -31,11 +31,17 @@ export default function AnimatedBackground() {
       r: (Math.random() * 1.6 + 0.4) * dpr,
     }));
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Particle colour follows the accent; read it once a second, not every frame.
+    let rgb = '147,187,255';
+    const readColor = () => {
+      const v = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim();
+      if (v) rgb = v.replace(/\s+/g, '');
+    };
+    readColor();
+    const colorTimer = setInterval(readColor, 1000);
 
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
-      const light = document.documentElement.dataset.theme === 'light';
-      const rgb = light ? '91,33,182' : '196,181,253';
       for (const p of pts) {
         if (!reduce) {
           p.x += p.vx;
@@ -79,6 +85,7 @@ export default function AnimatedBackground() {
     addEventListener('pointermove', onMove);
     return () => {
       cancelAnimationFrame(raf);
+      clearInterval(colorTimer);
       removeEventListener('resize', resize);
       removeEventListener('pointermove', onMove);
     };
@@ -95,6 +102,12 @@ export default function AnimatedBackground() {
             transition={{ duration: 18 + i * 4, repeat: Infinity, ease: 'easeInOut' }}
           />
         ))}
+      </div>
+      {/* Drifting smoke: big soft layers that slide past each other. */}
+      <div className="smoke" aria-hidden>
+        <span className="smoke-a" />
+        <span className="smoke-b" />
+        <span className="smoke-c" />
       </div>
       <canvas ref={canvasRef} className="bg-canvas" style={{ width: '100%', height: '100%' }} aria-hidden />
       <div className="noise" aria-hidden />
