@@ -45,7 +45,7 @@ function Message({ m, user }) {
       <div
         className="msg-avatar"
         style={{
-          background: isUser ? 'var(--grad)' : isBot ? `${m.meta?.color || '#8b5cf6'}33` : 'var(--surface-2)',
+          background: isUser ? 'var(--btn)' : isBot ? `${m.meta?.color || '#4f8dff'}33` : 'var(--surface-2)',
           border: '1px solid var(--border)',
           color: '#fff',
         }}

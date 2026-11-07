@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema(
     anthropicKeyHint: { type: String, default: '' }, // last 4 characters, for display
     sampleDataAt: Date, // set once when sample business data is loaded
     preferences: {
-      theme: { type: String, enum: ['dark', 'light'], default: 'light' },
+      theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
       currency: { type: String, default: 'INR' },
       voice: { type: Boolean, default: true },
       city: { type: String, default: '' },

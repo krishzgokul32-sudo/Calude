@@ -88,8 +88,8 @@ export default function Settings() {
         <motion.div variants={rise} className="glass card">
           <div className="card-title">Preferences</div>
           <div className="list-row">
-            <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Dark mode</div><div className="small muted">Off: clean white theme · On: aurora glass</div></div>
-            <Switch on={prefs.theme === 'dark'} onChange={(v) => updateUser({ preferences: { theme: v ? 'dark' : 'light' } })} label="Dark mode" />
+            <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Dark mode</div><div className="small muted">On: black Midnight Steel · Off: crisp white</div></div>
+            <Switch on={prefs.theme !== 'light'} onChange={(v) => updateUser({ preferences: { theme: v ? 'dark' : 'light' } })} label="Dark mode" />
           </div>
           <div className="list-row">
             <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Currency</div><div className="small muted">Used on the team dashboards</div></div>

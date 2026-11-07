@@ -110,7 +110,7 @@ export default function Tasks() {
                           type="checkbox"
                           checked={t.status === 'done'}
                           onChange={() => update(t, { status: t.status === 'done' ? 'todo' : 'done' })}
-                          style={{ marginTop: 4, accentColor: '#8b5cf6' }}
+                          style={{ marginTop: 4, accentColor: 'var(--primary)' }}
                           aria-label="Toggle done"
                         />
                         <div style={{ flex: 1 }}>

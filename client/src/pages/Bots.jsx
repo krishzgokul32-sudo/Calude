@@ -16,11 +16,11 @@ const TYPE_INFO = {
   slack: { emoji: '💼', label: 'Slack' },
 };
 const EMOJIS = ['🤖', '🦾', '🧠', '🛰️', '🐍', '🦉', '🌦️', '🧮', '📚', '🎧', '💼', '🎮', '✈️', '🔮', '🐙', '⚡'];
-const COLORS = ['#8b5cf6', '#ec4899', '#22d3ee', '#34d399', '#f59e0b', '#fb7185', '#38bdf8', '#a3e635'];
+const COLORS = ['#4f8dff', '#2fd39a', '#94a3b8', '#8b5cf6', '#ec4899', '#22d3ee', '#f59e0b', '#fb7185'];
 const SKILL_INFO = { calculator: 'Math expressions', weather: 'Live weather (Open-Meteo)', wikipedia: 'Wikipedia summaries', joke: 'Random jokes', echo: 'Echo back (testing)' };
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
-const blank = { type: '', name: '', handle: '', avatar: '🤖', color: '#8b5cf6', description: '', triggers: '', notify: false, config: {} };
+const blank = { type: '', name: '', handle: '', avatar: '🤖', color: '#4f8dff', description: '', triggers: '', notify: false, config: {} };
 
 function CopyBox({ text, mono = true }) {
   const [copied, setCopied] = useState(false);

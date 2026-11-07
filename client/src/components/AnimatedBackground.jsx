@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 const BLOBS = [
-  { color: '#7c3aed', size: 520, x: ['-10%', '10%', '-5%'], y: ['-10%', '5%', '-10%'], left: '5%', top: '0%' },
-  { color: '#db2777', size: 440, x: ['0%', '-15%', '0%'], y: ['0%', '15%', '0%'], left: '60%', top: '10%' },
-  { color: '#0891b2', size: 480, x: ['5%', '-5%', '5%'], y: ['10%', '-10%', '10%'], left: '30%', top: '55%' },
+  { color: '#1d4ed8', size: 520, x: ['-10%', '10%', '-5%'], y: ['-10%', '5%', '-10%'], left: '5%', top: '0%' },
+  { color: '#0b1f5c', size: 440, x: ['0%', '-15%', '0%'], y: ['0%', '15%', '0%'], left: '60%', top: '10%' },
+  { color: '#047857', size: 480, x: ['5%', '-5%', '5%'], y: ['10%', '-10%', '10%'], left: '30%', top: '55%' },
 ];
 
 /** Aurora gradient blobs + an interactive constellation of particles. */
@@ -35,7 +35,7 @@ export default function AnimatedBackground() {
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
       const light = document.documentElement.dataset.theme === 'light';
-      const rgb = light ? '91,33,182' : '196,181,253';
+      const rgb = light ? '26,58,168' : '147,187,255';
       for (const p of pts) {
         if (!reduce) {
           p.x += p.vx;
