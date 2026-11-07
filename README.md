@@ -132,6 +132,8 @@ GK is a full-stack personal assistant and business dashboard. It manages your **
 
 ## ⚡ Quick start
 
+> **Going live on your own domain (e.g. g5tech.in) with HTTPS?** Follow [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ### Option A: Docker (everything in one command)
 
 ```bash
