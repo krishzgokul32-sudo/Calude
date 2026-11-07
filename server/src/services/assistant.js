@@ -78,7 +78,7 @@ export async function handleMessage(user, text, opts = {}) {
         meta: { botName: routed.bot.name, botHandle: routed.bot.handle, avatar: routed.bot.avatar, color: routed.bot.color, status },
       });
     } else {
-      // 2) The assistant brain: Claude with tools, or the rule-based fallback
+      // 2) The assistant brain: the user's AI (any provider) with tools, or the rule-based fallback
       const actions = makeActions(user, { conversationId: conversation._id });
       let useClaude = await llmAvailable(user);
       let quotaNote = '';
@@ -106,7 +106,7 @@ export async function handleMessage(user, text, opts = {}) {
         user: user._id,
         role: 'assistant',
         content: result.text + quotaNote,
-        meta: { actions: result.actions, engine: useClaude ? 'claude' : 'local' },
+        meta: { actions: result.actions, engine: useClaude ? 'ai' : 'local' },
       });
     }
   } catch (err) {

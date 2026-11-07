@@ -10,7 +10,7 @@ import { userFromToken } from './middleware/auth.js';
 import { handleMessage } from './services/assistant.js';
 import { startScheduler, stopScheduler } from './services/scheduler.js';
 import { startTelegramPolling, stopTelegramPolling } from './bots/telegramBridge.js';
-import { serverKeyConfigured } from './services/llm.js';
+import { serverKeyConfigured, serverProvider } from './services/llm.js';
 import { seedDemo, DEMO } from './services/demoSeed.js';
 import { MongoRateStore } from './services/rateLimitStore.js';
 import { markShuttingDown } from './routes/health.js';
@@ -90,7 +90,7 @@ startScheduler();
 startTelegramPolling();
 
 server.listen(config.port, () => {
-  log.info(`API ready on http://localhost:${config.port}`, { serverClaudeKey: serverKeyConfigured(), pid: process.pid });
+  log.info(`API ready on http://localhost:${config.port}`, { serverAiKey: serverKeyConfigured(), serverAiProvider: serverProvider(), pid: process.pid });
 });
 
 // Graceful shutdown (guide §03/§10: zero-downtime deploys). Stop taking new work, let in-flight requests

@@ -68,7 +68,7 @@ export default function Dashboard() {
             </form>
             <div className="row-wrap" style={{ marginTop: 14 }}>
               {Object.entries(data.services).map(([k, on]) => (
-                <span key={k} className="badge"><span className={`dot ${on ? 'on' : 'off'}`} /> {k === 'claude' ? 'Claude AI' : k === 'python' ? 'Python NLP' : 'MongoDB'}</span>
+                <span key={k} className="badge"><span className={`dot ${on ? 'on' : 'off'}`} /> {k === 'claude' ? 'AI brain' : k === 'python' ? 'Python NLP' : 'MongoDB'}</span>
               ))}
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { dbReady, pingDB } from '../db.js';
 import { metrics } from '../services/metrics.js';
-import { serverKeyConfigured } from '../services/llm.js';
+import { serverKeyConfigured, serverProvider } from '../services/llm.js';
 import { config } from '../config.js';
 
 export const healthRoutes = Router();
@@ -11,7 +11,7 @@ export const markShuttingDown = () => {
 };
 
 // Liveness: the process is up. Never touches the DB, so a slow DB doesn't get the container killed.
-healthRoutes.get('/', (req, res) => res.json({ status: 'ok', claude: serverKeyConfigured(), time: new Date().toISOString() }));
+healthRoutes.get('/', (req, res) => res.json({ status: 'ok', claude: serverKeyConfigured(), ai: serverProvider(), time: new Date().toISOString() }));
 
 // Readiness: can this instance serve traffic right now? Load balancers stop routing to it on 503.
 healthRoutes.get('/ready', async (req, res) => {

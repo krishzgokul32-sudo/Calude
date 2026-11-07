@@ -46,7 +46,7 @@ async function runBot(bot, text, ctx) {
     case 'ai': {
       const persona = bot.config?.systemPrompt || `You are ${bot.name}, a helpful bot.`;
       if (!(await llmAvailable(ctx.user))) {
-        return `🤖 *${bot.name}* needs a Claude API key to think. Add yours in **Settings → Claude API key**.`;
+        return `🤖 *${bot.name}* needs an AI key to think. Add one from any provider (Claude, OpenAI, Gemini, Groq…) in **Settings → AI brain**.`;
       }
       const quota = await takeAiQuota(bot.user);
       if (!quota.ok) return `🤖 *${bot.name}* has reached today's limit of ${quota.limit} AI messages. It resets at midnight UTC.`;

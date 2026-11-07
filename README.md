@@ -8,7 +8,7 @@ GK is a full-stack personal assistant and business dashboard. It manages your **
 | ⚙️ Backend | **Node.js** + Express 5, Socket.IO (real-time), JWT auth, node-cron scheduler |
 | 🍃 Database | **MongoDB** + Mongoose |
 | 🐍 AI service | **Python** + FastAPI: sentiment, intent (Naive Bayes), entities, keywords, summaries |
-| 🧠 LLM brain (optional) | **Claude** (`claude-opus-5-5`) with tool use. Without an API key, a built-in rule-based brain is used |
+| 🧠 LLM brain (optional) | **Any AI provider** with tool use: Claude (`claude-opus-5-5` by default), OpenAI, Google Gemini, Groq, OpenRouter, Mistral, DeepSeek, xAI, Together, Ollama, or any OpenAI-compatible API. Without a key, a built-in rule-based brain is used |
 
 ![Business overview](docs/screenshots/admin-overview.jpg)
 
@@ -36,7 +36,7 @@ GK is a full-stack personal assistant and business dashboard. It manages your **
 
 **Assistant**
 - Chat in natural language. The assistant takes real actions: creates tasks, saves notes, schedules reminders, and calls bots.
-- **Claude brain** (once you add your API key in **Settings**, or set `ANTHROPIC_API_KEY` on the server): an agentic tool-use loop with 10 tools (`create_task`, `set_reminder`, `call_bot`, `analyze_text`, …).
+- **AI brain, any provider** (once you add a key in **Settings → AI brain**, or set `ANTHROPIC_API_KEY` / `AI_API_KEY` on the server): an agentic tool-use loop with 10 tools (`create_task`, `set_reminder`, `call_bot`, `analyze_text`, …).
 - **Rule-based brain** (no key needed): understands the core commands, so the app works offline.
 - **Voice**: speak to it (speech-to-text) and have it read replies aloud (text-to-speech).
 - Real-time replies over Socket.IO. Conversations sync across tabs and channels.
@@ -139,9 +139,11 @@ docker compose up --build
 # open http://localhost:8080   →  demo login: demo@assistant.dev / demo1234
 ```
 
-**Turn on the Claude brain:** sign in, open **Settings → Claude API key**, paste your key from [console.anthropic.com](https://console.anthropic.com/settings/keys) and click **Save key**. GK checks the key with Anthropic, stores it encrypted in MongoDB, and starts using it immediately. No restart needed. Each user can add their own key.
+**Turn on the AI brain (any provider):** sign in, open **Settings → AI brain**, paste a key and click **Connect**. GK recognises the provider from the key (`sk-ant-` Claude, `sk-` OpenAI, `AIza` Gemini, `gsk_` Groq, `sk-or-` OpenRouter, `xai-` xAI) or you pick it from the list (Mistral, DeepSeek, Together, Ollama, or **Other** for any OpenAI-compatible API with its base URL). Leave **Model** blank for a good default. GK checks the key with the provider, stores it encrypted in MongoDB, and starts using it immediately. No restart needed. Each user can use a different provider.
 
-Prefer one key for everyone? Copy `.env.example` to `.env` (next to `docker-compose.yml`), fill in `ANTHROPIC_API_KEY=`, then run `docker compose down` and `docker compose up`. A user's own key takes priority over the server key. (On Windows, `ANTHROPIC_API_KEY=... docker compose up` doesn't work in PowerShell, so use the `.env` file.)
+For **Ollama** on your own computer: pick *Ollama*, leave the key empty, and GK reaches it at `http://host.docker.internal:11434/v1`. In production builds, private addresses are blocked unless you set `ALLOW_PRIVATE_WEBHOOKS=true`.
+
+Prefer one key for everyone? Copy `.env.example` to `.env` (next to `docker-compose.yml`), fill in `ANTHROPIC_API_KEY=` (Claude) or `AI_API_KEY=` (any other provider, plus optional `AI_PROVIDER`, `AI_MODEL`, `AI_BASE_URL`), then run `docker compose down` and `docker compose up`. A user's own key takes priority over the server key. (On Windows, `ANTHROPIC_API_KEY=... docker compose up` doesn't work in PowerShell, so use the `.env` file.)
 
 ### Option B: Run locally
 
@@ -273,7 +275,8 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 | --- | --- | --- |
 | POST | `/auth/register` · `/auth/login` | Returns `{ token, user }` |
 | GET/PATCH | `/auth/me` 🔒 | Profile, assistant name, preferences (theme, voice, city) |
-| PUT/DELETE | `/auth/me/api-key` 🔒 | Save (verified + encrypted) or remove your own Claude API key |
+| GET | `/auth/ai-providers` 🔒 | The AI providers GK supports |
+| PUT/DELETE | `/auth/me/api-key` 🔒 | Save (verified + encrypted) or remove your own AI key: `{ provider?, apiKey, model?, baseUrl? }` |
 | POST | `/chat/message` 🔒 | `{ text, conversationId? }` → `{ conversation, messages:[user, reply] }` |
 | GET/DELETE | `/chat/conversations[/:id]` 🔒 | List or delete conversations |
 | GET | `/chat/conversations/:id/messages` 🔒 | Message history |
@@ -352,6 +355,10 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 | `SEED_DEMO` | — | `true` creates the demo account on startup |
 | `JWT_SECRET` | dev value | **Must** be set in production |
 | `ANTHROPIC_API_KEY` | — | Server-wide Claude key for users who haven't added their own in Settings |
+| `AI_API_KEY` | — | Server-wide key for any other provider (takes priority over `ANTHROPIC_API_KEY` when set) |
+| `AI_PROVIDER` | guessed from key | `openai`, `gemini`, `groq`, `openrouter`, `mistral`, `deepseek`, `xai`, `together`, `ollama`, `custom` |
+| `AI_MODEL` | provider default | Model name, e.g. `gpt-4o-mini`, `llama-3.3-70b-versatile` |
+| `AI_BASE_URL` | provider default | API address, required for `custom` (e.g. `https://my-llm.example.com/v1`) |
 | `ENCRYPTION_KEY` | `JWT_SECRET` | Encrypts users' saved API keys. Changing it (or `JWT_SECRET` when unset) means users must re-enter their keys |
 | `CLAUDE_MODEL` | `claude-opus-5-5` | Claude model id |
 | `AI_SERVICE_URL` | `http://localhost:8000` | Python service |

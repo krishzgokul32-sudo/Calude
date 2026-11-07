@@ -1,6 +1,6 @@
 import { parseWhen } from './timeParser.js';
 
-// Rule-based brain used when no ANTHROPIC_API_KEY is configured.
+// Rule-based brain used when no AI key (any provider) is configured.
 // It understands the core personal-assistant commands and routes to actions.
 const fmtDate = (d) => new Date(d).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', month: 'short', day: 'numeric' });
 
@@ -11,7 +11,7 @@ const HELP = `Here's what I can do:
 - **Bots** — mention any bot with \`@handle\`, e.g. "@weather in Tokyo", "@calc 12*7", or say "list bots"
 - **Analysis** — "analyze: I love this new feature but the login is slow"
 
-_Tip: add your Claude API key in **Settings** to unlock full conversational AI._`;
+_Tip: add an AI key from any provider (Claude, OpenAI, Gemini, Groq, OpenRouter…) in **Settings** to unlock full conversational AI._`;
 
 export function detectIntent(text) {
   const t = text.trim();

@@ -818,3 +818,8 @@ input, textarea, select { font: inherit; color: inherit; }
 @keyframes armyMarch { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
 .army-eye { animation: dwVisor 3.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .army-bolt, .army-flash, .army-march, .army-eye { animation: none; } }
+
+/* AI brain form (Settings) */
+.ai-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ai-form .field { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+@media (max-width: 760px) { .ai-form { grid-template-columns: 1fr; } .ai-form .field { grid-column: auto !important; } }

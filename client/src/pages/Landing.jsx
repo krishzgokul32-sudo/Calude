@@ -8,7 +8,7 @@ import NeuralBrain from '../components/NeuralBrain';
 import BotArmy from '../components/BotArmy';
 
 const ARSENAL = [
-  { icon: Brain, title: 'Agentic brain', text: 'GK plans, picks the right tools and finishes the job: tasks, notes, reminders, invoices.' },
+  { icon: Brain, title: 'Agentic brain', text: 'Bring any AI: Claude, OpenAI, Gemini, Groq, Ollama and more. GK plans, picks the right tools and finishes the job.' },
   { icon: Bot, title: 'An army of bots', text: 'Build your own bots with skills and a persona, then call any of them by @name from chat.' },
   { icon: PlugZap, title: 'Every connector', text: 'Telegram, WhatsApp, Gmail, Slack, Google Maps and more, each with its own key and test.' },
   { icon: Workflow, title: 'MCP server', text: 'Expose GK to Claude Desktop and other AI clients with per-user keys and gated tools.' },

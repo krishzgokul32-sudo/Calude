@@ -7,9 +7,13 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true, minlength: 6, select: false },
     assistantName: { type: String, default: 'GK' },
-    // The user's own Anthropic API key, AES-GCM encrypted. Never sent to the browser.
+    // The user's own AI API key (any provider; the field keeps its original name), AES-GCM encrypted.
+    // Never sent to the browser.
     anthropicKey: { type: String, select: false },
     anthropicKeyHint: { type: String, default: '' }, // last 4 characters, for display
+    aiProvider: { type: String, enum: ['anthropic', 'openai', 'gemini', 'groq', 'openrouter', 'mistral', 'deepseek', 'xai', 'together', 'ollama', 'custom'], default: 'anthropic' },
+    aiModel: { type: String, default: '' }, // blank = the provider's default
+    aiBaseUrl: { type: String, default: '' }, // for OpenAI-compatible providers
     sampleDataAt: Date, // set once when sample business data is loaded
     preferences: {
       theme: { type: String, enum: ['dark', 'light'], default: 'dark' },

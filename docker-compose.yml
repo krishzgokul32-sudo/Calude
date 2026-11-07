@@ -60,11 +60,19 @@ services:
       JWT_SECRET: ${JWT_SECRET:-please-change-me}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-opus-5-5}
+      # Any other AI provider (optional): openai, gemini, groq, openrouter, mistral, deepseek, xai, together, ollama, custom
+      AI_PROVIDER: ${AI_PROVIDER:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_BASE_URL: ${AI_BASE_URL:-}
       AI_DAILY_LIMIT: ${AI_DAILY_LIMIT:-200}
       API_RATE_LIMIT: ${API_RATE_LIMIT:-300}
       METRICS_TOKEN: ${METRICS_TOKEN:-}
       TRUST_PROXY: 1 # nginx sits in front, so trust one hop for client IPs
       SEED_DEMO: ${SEED_DEMO:-true}
+    # Lets the server reach Ollama running on your own computer at host.docker.internal:11434.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     stop_grace_period: 30s
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:5000/api/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]

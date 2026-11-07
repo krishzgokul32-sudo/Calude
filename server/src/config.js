@@ -12,6 +12,12 @@ export const config = {
   jwtSecret: env.JWT_SECRET || 'dev-secret-change-me',
   anthropicKey: env.ANTHROPIC_API_KEY || '',
   claudeModel: env.CLAUDE_MODEL || 'claude-opus-5-5',
+  // Any other AI provider for the whole server (optional): openai, gemini, groq, openrouter, mistral,
+  // deepseek, xai, together, ollama or custom. The provider is guessed from the key when not set.
+  aiProvider: (env.AI_PROVIDER || '').toLowerCase(),
+  aiApiKey: env.AI_API_KEY || '',
+  aiModel: env.AI_MODEL || '',
+  aiBaseUrl: env.AI_BASE_URL || '',
   aiServiceUrl: env.AI_SERVICE_URL || 'http://localhost:8000',
   publicApiUrl: env.PUBLIC_API_URL || 'http://localhost:5000',
   // Number of proxies in front of the API (nginx, a load balancer). Needed for correct client IPs.
@@ -29,13 +35,16 @@ export function validateConfig() {
   const warnings = [];
   if (!Number.isInteger(config.port) || config.port < 1 || config.port > 65535) errors.push(`PORT "${env.PORT}" is not a valid port`);
   if (!/^mongodb(\+srv)?:\/\//.test(config.mongoUri) && !config.useMemoryDb) errors.push('MONGO_URI must start with mongodb:// or mongodb+srv://');
-  for (const [name, value] of [['CLIENT_URL', config.clientUrl], ['PUBLIC_API_URL', config.publicApiUrl], ['AI_SERVICE_URL', config.aiServiceUrl]]) {
+  for (const [name, value] of [['CLIENT_URL', config.clientUrl], ['PUBLIC_API_URL', config.publicApiUrl], ['AI_SERVICE_URL', config.aiServiceUrl], ...(config.aiBaseUrl ? [['AI_BASE_URL', config.aiBaseUrl]] : [])]) {
     try {
       new URL(value);
     } catch {
       errors.push(`${name} "${value}" is not a valid URL`);
     }
   }
+  const knownProviders = ['anthropic', 'openai', 'gemini', 'groq', 'openrouter', 'mistral', 'deepseek', 'xai', 'together', 'ollama', 'custom'];
+  if (config.aiProvider && !knownProviders.includes(config.aiProvider)) errors.push(`AI_PROVIDER "${config.aiProvider}" is not one of: ${knownProviders.join(', ')}`);
+  if (config.aiProvider === 'custom' && !config.aiBaseUrl) errors.push('AI_PROVIDER=custom needs AI_BASE_URL');
   if (Number.isNaN(config.aiDailyLimit) || config.aiDailyLimit < 0) errors.push('AI_DAILY_LIMIT must be 0 or a positive number');
   if (isProd && config.jwtSecret === 'dev-secret-change-me') errors.push('JWT_SECRET must be set in production');
   else if (config.jwtSecret.length < 32 || /change-me/i.test(config.jwtSecret)) warnings.push('JWT_SECRET is short or a placeholder. Use 32+ random characters before going live (e.g. `openssl rand -hex 32`).');
