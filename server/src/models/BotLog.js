@@ -15,4 +15,6 @@ const botLogSchema = new mongoose.Schema(
 
 botLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 }); // keep 30 days
 
+botLogSchema.index({ bot: 1, createdAt: -1 });
+
 export default mongoose.model('BotLog', botLogSchema);

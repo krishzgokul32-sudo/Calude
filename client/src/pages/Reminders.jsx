@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSaving } from '../hooks/useSaving';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Trash2, Repeat } from 'lucide-react';
 import { Page, Tabs, Empty } from '../components/ui';
@@ -15,6 +16,7 @@ export default function Reminders() {
   const [form, setForm] = useState({ text: '', remindAt: toLocalInput(new Date(Date.now() + 15 * 60e3)), repeat: 'none' });
   const [, tick] = useState(0);
   const toast = useToast();
+  const [saving, run] = useSaving();
 
   const load = useCallback(() => api.get('/reminders').then((r) => setItems(r.data)), []);
   useEffect(() => { load(); }, [load]);
@@ -25,8 +27,7 @@ export default function Reminders() {
   useSocketEvent('data:changed', ({ kind }) => kind === 'reminders' && load());
   useSocketEvent('reminder:due', load);
 
-  const add = async (e) => {
-    e.preventDefault();
+  const add = run(async () => {
     try {
       await api.post('/reminders', { ...form, remindAt: new Date(form.remindAt).toISOString() });
       toast('Reminder set', { type: 'success', body: form.text });
@@ -35,11 +36,16 @@ export default function Reminders() {
     } catch (err) {
       toast(errMsg(err), { type: 'error' });
     }
-  };
+  });
 
   const remove = async (r) => {
     setItems((xs) => xs.filter((x) => x._id !== r._id));
-    await api.delete(`/reminders/${r._id}`);
+    try {
+      await api.delete(`/reminders/${r._id}`);
+    } catch (err) {
+      toast(errMsg(err), { type: 'error' });
+      load();
+    }
   };
 
   const shown = items.filter((r) => (tab === 'upcoming' ? !r.delivered : r.delivered));
@@ -60,7 +66,7 @@ export default function Reminders() {
         <select className="select" style={{ flex: '0 1 130px' }} value={form.repeat} onChange={(e) => setForm({ ...form, repeat: e.target.value })}>
           <option value="none">Once</option><option value="daily">Daily</option><option value="weekly">Weekly</option>
         </select>
-        <button className="btn btn-primary"><Plus size={16} /> Add</button>
+        <button className="btn btn-primary" disabled={saving}><Plus size={16} /> {saving ? 'Adding…' : 'Add'}</button>
       </motion.form>
 
       <div className="grid">

@@ -1,43 +1,94 @@
 # One command to run everything:  docker compose up --build
 # App: http://localhost:8080   (demo login: demo@assistant.dev / demo1234)
+# Settings come from a .env file next to this one (copy .env.example).
+#
+# Production notes (TRACEN guide §03/§05/§10):
+#  - MongoDB runs as a single-node replica set, so Socket.IO can share events between API copies.
+#    Scale the API with:  docker compose up -d --scale server=3  (nginx balances between them)
+#  - Every service has a health check, a restart policy and a memory limit.
+#  - The API gets 30 s to shut down cleanly on deploys (stop_grace_period).
 services:
   mongo:
     image: mongo:7
+    command: ["--replSet", "rs0", "--bind_ip_all"]
     restart: unless-stopped
     volumes:
       - mongo-data:/data/db
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017" # reachable from this machine only
+    healthcheck:
+      # Initiates the replica set on first start, then reports healthy once it has a primary.
+      test: >
+        mongosh --quiet --eval "try { rs.status().ok } catch (e) { rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongo:27017'}]}).ok }" | grep -q 1
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1g
 
   ai-service:
     build: ./ai-service
     restart: unless-stopped
-    ports:
-      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256m
 
   server:
     build: ./server
     restart: unless-stopped
-    depends_on: [mongo, ai-service]
+    depends_on:
+      mongo:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
     environment:
       PORT: 5000
-      MONGO_URI: mongodb://mongo:27017/personal_assistant
+      MONGO_URI: mongodb://mongo:27017/personal_assistant?replicaSet=rs0
+      MONGO_POOL_SIZE: ${MONGO_POOL_SIZE:-50}
       AI_SERVICE_URL: http://ai-service:8000
-      CLIENT_URL: http://localhost:8080
-      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:5000}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:8080}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
       JWT_SECRET: ${JWT_SECRET:-please-change-me}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-opus-5-5}
-      SEED_DEMO: "true"
-    ports:
-      - "5000:5000"
+      AI_DAILY_LIMIT: ${AI_DAILY_LIMIT:-200}
+      API_RATE_LIMIT: ${API_RATE_LIMIT:-300}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      TRUST_PROXY: 1 # nginx sits in front, so trust one hop for client IPs
+      SEED_DEMO: ${SEED_DEMO:-true}
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:5000/api/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
 
   client:
     build: ./client
     restart: unless-stopped
-    depends_on: [server]
+    depends_on:
+      server:
+        condition: service_healthy
     ports:
       - "8080:80"
+    deploy:
+      resources:
+        limits:
+          memory: 128m
 
 volumes:
   mongo-data:

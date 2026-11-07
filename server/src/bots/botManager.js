@@ -6,6 +6,9 @@ import { builtinSkills } from './builtins.js';
 import { telegram, postDiscord, postSlack } from './connectors.js';
 import { llmAvailable, runClaude } from '../services/llm.js';
 import { emitToUser } from '../services/realtime.js';
+import { withRetry } from '../services/resilience.js';
+import { takeAiQuota } from '../services/aiQuota.js';
+import { assertPublicUrl } from '../services/urlGuard.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -45,6 +48,8 @@ async function runBot(bot, text, ctx) {
       if (!(await llmAvailable(ctx.user))) {
         return `🤖 *${bot.name}* needs a Claude API key to think. Add yours in **Settings → Claude API key**.`;
       }
+      const quota = await takeAiQuota(bot.user);
+      if (!quota.ok) return `🤖 *${bot.name}* has reached today's limit of ${quota.limit} AI messages. It resets at midnight UTC.`;
       const history = (ctx.history || []).slice(-10);
       const { text: reply } = await runClaude({
         user: ctx.user,
@@ -63,8 +68,11 @@ async function runBot(bot, text, ctx) {
         conversationId: ctx.conversationId,
         timestamp: new Date().toISOString(),
       });
+      await assertPublicUrl(bot.config.url);
       const { data } = await axios.post(bot.config.url, body, {
         timeout: 10000,
+        maxContentLength: 1_000_000, // a misbehaving bot can't flood memory (guide §02 huge payloads)
+        maxRedirects: 0, // no redirect hops around the private-network check
         headers: {
           'Content-Type': 'application/json',
           'X-PA-Signature': signPayload(bot.apiKey, body),
@@ -72,7 +80,7 @@ async function runBot(bot, text, ctx) {
           ...(bot.config.headers || {}),
         },
       });
-      if (typeof data === 'string') return data;
+      if (typeof data === 'string') return data.slice(0, 20000);
       return data?.reply ?? data?.text ?? data?.message ?? JSON.stringify(data);
     }
     case 'telegram': {
@@ -81,9 +89,11 @@ async function runBot(bot, text, ctx) {
       return `📨 Sent to Telegram via ${bot.name}`;
     }
     case 'discord':
+      await assertPublicUrl(bot.config.webhookUrl);
       await postDiscord(bot.config.webhookUrl, text);
       return `📨 Posted to Discord via ${bot.name}`;
     case 'slack':
+      await assertPublicUrl(bot.config.webhookUrl);
       await postSlack(bot.config.webhookUrl, text);
       return `📨 Posted to Slack via ${bot.name}`;
     default:
@@ -117,6 +127,18 @@ export async function dispatchToBot(bot, text, ctx = {}) {
 /** Push a notification (e.g. a due reminder) through every bot with notify=true. */
 export async function notifyThroughBots(userId, text) {
   const bots = await Bot.find({ user: userId, enabled: true, notify: true, type: { $in: ['telegram', 'discord', 'slack'] } });
-  await Promise.allSettled(bots.map((b) => dispatchToBot(b, text, {})));
+  // Each bot gets up to 3 tries with backoff, so a brief Telegram/Discord/Slack hiccup doesn't lose a reminder.
+  await Promise.allSettled(
+    bots.map((b) =>
+      withRetry(
+        async () => {
+          const r = await dispatchToBot(b, text, {});
+          if (r.status === 'error') throw new Error(r.reply);
+          return r;
+        },
+        { tries: 3, baseMs: 1000, label: `notify ${b.handle}` }
+      )
+    )
+  );
   return bots.length;
 }

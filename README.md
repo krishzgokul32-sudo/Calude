@@ -28,6 +28,7 @@ GK is a full-stack personal assistant and business dashboard. It manages your **
 - [Configuration](#-configuration)
 - [Testing](#-testing)
 - [Deploying](#-deploying)
+- [Production readiness (10,000 users)](#-production-readiness-10000-users)
 
 ---
 
@@ -238,9 +239,11 @@ Ready-to-run examples are in [`examples/`](examples/): a Node webhook bot, a Pyt
 3. Click **New key**, name it after the app, and copy the URL. **The URL is a password** and is shown only once.
 4. Connect your app (the page shows these with your key filled in):
 
+The connection URL looks like `http://localhost:8080/api/mcp/gk_mcp_…` with Docker, or `http://localhost:5000/api/mcp/gk_mcp_…` with `npm run dev`. The MCP page always shows the right one.
+
 | App | How |
 | --- | --- |
-| Claude Code | `claude mcp add --transport http --scope user gk "http://localhost:5000/api/mcp/<your-key>"`, then `claude mcp list` |
+| Claude Code | `claude mcp add --transport http --scope user gk "<connection URL>"`, then `claude mcp list` |
 | Claude Desktop (GK on localhost) | Settings → Developer → Edit Config, add `"gk": { "command": "npx", "args": ["-y", "mcp-remote", "<url>"] }` under `mcpServers`, then restart Claude Desktop |
 | Claude Desktop or web (GK deployed on https) | Settings → Connectors → Add custom connector → paste the URL, leave the OAuth fields empty |
 | Cursor | `~/.cursor/mcp.json` → `{ "mcpServers": { "gk": { "url": "<url>" } } }` |
@@ -318,15 +321,21 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 │       ├── mcp/               MCP server: catalog, keys, settings, tools, endpoint
 │       ├── models/            User, Conversation, Message, Task, Note, Reminder, Bot, BotLog,
 │       │                      Lead, Invoice, Post, Project, Integration
-│       ├── routes/            auth, chat, bots, integrations, integrations-admin (Connections), analytics, dashboard, crud
+│       ├── middleware/        auth (cached sign-in), limits (shared rate limits), idempotency, requestContext, errors
+│       ├── routes/            health (live/ready/metrics), auth, chat, bots, integrations, integrations-admin (Connections), analytics, dashboard, crud
 │       ├── services/          assistant (orchestrator), llm (Claude), actions (tools), localBrain,
 │       │                      scheduler, timeParser, pythonAI, realtime, defaultBots, demoSeed,
 │       │                      analytics, sampleData, integrations (tool checks), secrets (encryption)
+│       │                      resilience (retry, circuit breaker, leases), cache, aiQuota, urlGuard,
+│       │                      rateLimitStore, logger, metrics
 │       └── bots/              botManager (routing + dispatch), builtins, calculator,
 │                              connectors (Telegram/Discord/Slack), telegramBridge
 ├── ai-service/                Python FastAPI NLP service (+ pytest tests)
 ├── examples/                  Sample bots to connect (Node + Python)
-├── docs/                      BOT_INTEGRATION.md, screenshots
+├── docs/                      BOT_INTEGRATION.md, PRODUCTION_READINESS.md, RUNBOOK.md, screenshots
+├── loadtest/                  k6 load test + quick autocannon benchmark
+├── scripts/                   backup.sh, restore.sh (MongoDB)
+├── .github/workflows/ci.yml   Tests, build and lint on every push
 └── docker-compose.yml         mongo + ai-service + server + client
 ```
 
@@ -347,7 +356,14 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 | `CLAUDE_MODEL` | `claude-opus-5-5` | Claude model id |
 | `AI_SERVICE_URL` | `http://localhost:8000` | Python service |
 | `CLIENT_URL` | `http://localhost:5173` | CORS origin |
-| `PUBLIC_API_URL` | `http://localhost:5000` | Public URL of the API. If it's `https://…`, Telegram uses webhooks; otherwise the server long-polls Telegram, which works on localhost |
+| `PUBLIC_API_URL` | `http://localhost:5000` (Docker: `:8080`) | Public URL of the API. If it's `https://…`, Telegram uses webhooks; otherwise the server long-polls Telegram, which works on localhost |
+| `TRUST_PROXY` | — (Docker: `1`) | Number of proxies in front of the API, so client IPs (and IP rate limits) are correct |
+| `API_RATE_LIMIT` | `300` | API requests per minute per user (or IP when signed out) |
+| `AI_DAILY_LIMIT` | `200` | Claude messages per user per day; `0` = unlimited |
+| `MONGO_POOL_SIZE` | `50` | DB connections per API process; keep `copies × pool` below your DB's limit |
+| `METRICS_TOKEN` | — | Bearer token for `/api/health/metrics` outside localhost |
+| `LOG_FORMAT` / `LOG_LEVEL` | JSON in production | Structured logs with request IDs |
+| `ALLOW_PRIVATE_WEBHOOKS` | `false` in production | Allow bot webhooks to private network addresses |
 
 `client/.env`: `VITE_API_URL` (leave it empty in development; Vite proxies `/api`).
 
@@ -356,17 +372,41 @@ All routes are prefixed with `/api`. 🔒 means the route needs `Authorization: 
 ## 🧪 Testing
 
 ```bash
-npm test                       # server unit tests + python tests
-npm --prefix server test       # calculator, time parser, intents, signatures
+npm test                                                        # server + python tests
+cd server && TEST_MONGO_URI=mongodb://127.0.0.1:27017 npm test  # + integration tests on a real MongoDB
 cd ai-service && python -m pytest -q
+node loadtest/quick-bench.mjs http://localhost:5000             # quick load test (needs autocannon)
+k6 run loadtest/k6-load.js                                      # full load test, against staging
 ```
 
+GitHub Actions (`.github/workflows/ci.yml`) runs the server tests on a real MongoDB, boots the API, lints and builds the client, and runs the Python tests on every push.
+
 ---
+
+## 🛡️ Production readiness (10,000 users)
+
+GK was checked against the **TRACEN "10,000 users. Will your app survive?"** guide, section by section. The full report, with before/after load-test numbers, is in **[docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md)**, and the outage runbook is in **[docs/RUNBOOK.md](docs/RUNBOOK.md)**.
+
+| | |
+|---|---|
+| Analytics endpoint | 44 → **844 req/s**, p99 1,574 → **93 ms** |
+| One API process (4-core sandbox) | ceiling about **720–740 req/s**; p95 under 500 ms up to ~200 concurrent; **0 errors** in an 800-connection spike |
+| Two API copies together | live updates, rate limits, reminders (exactly once) and Telegram failover verified |
+| Guide checklist | **21 / 31** verified; the rest need your server and accounts (steps in the report) |
+
+Highlights:
+- Rate limits stored in MongoDB, shared across server copies: per user, plus a brute-force login limit.
+- Idempotency keys, so a repeated request never runs twice.
+- Atomic reminder delivery and a Telegram lease, so nothing is sent twice.
+- Circuit breaker, retries with jitter, and timeouts everywhere.
+- Per-user caches that clear on every write, plus a per-user daily cap on AI messages.
+- Health, readiness and metrics endpoints, structured logs with request IDs, and an error boundary in the app.
+- Graceful shutdown, Docker health checks and memory limits, and backup + tested restore scripts.
 
 ## ☁️ Deploying
 
 - **Database:** MongoDB Atlas (set `MONGO_URI`).
-- **API:** any Node host (Render, Railway, Fly.io, a VPS). Set `JWT_SECRET`, `CLIENT_URL` and `PUBLIC_API_URL=https://your-api` (this enables Telegram webhooks).
+- **API:** any Node host (Render, Railway, Fly.io, a VPS). Set `JWT_SECRET` (32+ random characters), `CLIENT_URL`, `PUBLIC_API_URL=https://your-api` (this enables Telegram webhooks), `TRUST_PROXY=1` behind a proxy, and `SEED_DEMO=false`. Point the platform's health check at `/api/health/ready`.
 - **Python service:** any container host. Set `AI_SERVICE_URL` on the API.
 - **Client:** `npm run build` and serve `client/dist` (Netlify, Vercel, nginx). Set `VITE_API_URL=https://your-api` at build time, or use the provided nginx proxy config.
 

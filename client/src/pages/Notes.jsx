@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSaving } from '../hooks/useSaving';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Pin, Search, Trash2 } from 'lucide-react';
 import { Page, Modal, Empty } from '../components/ui';
 import { useSocketEvent } from '../context/AuthContext';
-import { api } from '../lib/api';
+import { api, errMsg } from '../lib/api';
+import { useToast } from '../context/ToastContext';
 import { timeAgo } from '../lib/format';
 
 const COLORS = { violet: '#8b5cf6', pink: '#ec4899', cyan: '#22d3ee', green: '#34d399', amber: '#fbbf24', red: '#fb7185' };
@@ -13,29 +15,42 @@ export default function Notes() {
   const [notes, setNotes] = useState([]);
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState(null);
+  const [saving, run] = useSaving();
+  const toast = useToast();
 
   const load = useCallback(() => api.get('/notes').then((r) => setNotes(r.data)), []);
   useEffect(() => { load(); }, [load]);
   useSocketEvent('data:changed', ({ kind }) => kind === 'notes' && load());
 
-  const save = async (e) => {
-    e.preventDefault();
+  const save = run(async () => {
     const { _id, title, content, color, pinned } = editing;
-    if (_id) await api.patch(`/notes/${_id}`, { title, content, color, pinned });
-    else await api.post('/notes', { title, content, color, pinned });
-    setEditing(null);
-    load();
-  };
+    try {
+      if (_id) await api.patch(`/notes/${_id}`, { title, content, color, pinned });
+      else await api.post('/notes', { title, content, color, pinned });
+      setEditing(null);
+      load();
+    } catch (err) {
+      toast(errMsg(err), { type: 'error' });
+    }
+  });
 
   const togglePin = async (n, e) => {
     e.stopPropagation();
-    await api.patch(`/notes/${n._id}`, { pinned: !n.pinned });
+    try {
+      await api.patch(`/notes/${n._id}`, { pinned: !n.pinned });
+    } catch (err) {
+      toast(errMsg(err), { type: 'error' });
+    }
     load();
   };
 
   const remove = async () => {
-    await api.delete(`/notes/${editing._id}`);
-    setEditing(null);
+    try {
+      await api.delete(`/notes/${editing._id}`);
+      setEditing(null);
+    } catch (err) {
+      toast(errMsg(err), { type: 'error' });
+    }
     load();
   };
 
@@ -106,7 +121,7 @@ export default function Notes() {
             <div className="row">
               {editing._id && <button type="button" className="btn btn-danger" onClick={remove}><Trash2 size={15} /> Delete</button>}
               <div className="spacer" />
-              <button className="btn btn-primary">Save</button>
+              <button className="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
             </div>
           </form>
         )}

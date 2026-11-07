@@ -18,4 +18,7 @@ const invoiceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+invoiceSchema.index({ user: 1, issueDate: -1 });
+invoiceSchema.index({ user: 1, kind: 1, status: 1 });
+
 export default mongoose.model('Invoice', invoiceSchema);

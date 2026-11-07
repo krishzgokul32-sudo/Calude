@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSaving } from '../hooks/useSaving';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Trash2, Calendar } from 'lucide-react';
 import { Page, Modal, Empty } from '../components/ui';
@@ -20,6 +21,7 @@ export default function Tasks() {
   const [form, setForm] = useState({ title: '', description: '', priority: 'medium', dueDate: '', project: '' });
   const [projects, setProjects] = useState([]);
   const toast = useToast();
+  const [saving, run] = useSaving();
 
   const load = useCallback(() => api.get('/tasks').then((r) => setTasks(r.data)), []);
   useEffect(() => { load(); }, [load]);
@@ -37,8 +39,7 @@ export default function Tasks() {
     }
   };
 
-  const create = async (e) => {
-    e.preventDefault();
+  const create = run(async () => {
     try {
       await api.post('/tasks', { ...form, dueDate: form.dueDate || undefined, project: form.project || undefined });
       setOpen(false);
@@ -47,11 +48,16 @@ export default function Tasks() {
     } catch (err) {
       toast(errMsg(err), { type: 'error' });
     }
-  };
+  });
 
   const remove = async (task) => {
     setTasks((ts) => ts.filter((t) => t._id !== task._id));
-    await api.delete(`/tasks/${task._id}`);
+    try {
+      await api.delete(`/tasks/${task._id}`);
+    } catch (err) {
+      toast(errMsg(err), { type: 'error' });
+      load();
+    }
   };
 
   return (
@@ -155,7 +161,7 @@ export default function Tasks() {
               </select>
             </div>
           )}
-          <button className="btn btn-primary" style={{ width: '100%' }}>Create task</button>
+          <button className="btn btn-primary" style={{ width: '100%' }} disabled={saving}>{saving ? 'Creating…' : 'Create task'}</button>
         </form>
       </Modal>
     </Page>

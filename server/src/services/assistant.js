@@ -5,6 +5,9 @@ import { llmAvailable, runClaude } from './llm.js';
 import { localReply } from './localBrain.js';
 import { makeActions, toolDefinitions } from './actions.js';
 import { pythonAI } from './pythonAI.js';
+import { takeAiQuota } from './aiQuota.js';
+
+export const MAX_MESSAGE_LENGTH = 8000;
 import { emitToUser } from './realtime.js';
 
 function systemPrompt(user) {
@@ -20,10 +23,19 @@ async function getConversation(user, { conversationId, channel = 'web', external
     if (c) return c;
   }
   if (externalId) {
-    const c = await Conversation.findOne({ user: user._id, channel, externalId });
-    if (c) return c;
+    // Atomic upsert + unique index: two messages arriving together can't create two conversations (guide §13).
+    try {
+      return await Conversation.findOneAndUpdate(
+        { user: user._id, channel, externalId: String(externalId) },
+        { $setOnInsert: { title: 'New conversation', lastMessageAt: new Date() } },
+        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
+      );
+    } catch (err) {
+      if (err.code !== 11000) throw err;
+      return Conversation.findOne({ user: user._id, channel, externalId: String(externalId) });
+    }
   }
-  return Conversation.create({ user: user._id, channel, externalId });
+  return Conversation.create({ user: user._id, channel });
 }
 
 /**
@@ -31,6 +43,9 @@ async function getConversation(user, { conversationId, channel = 'web', external
  * (web UI, Socket.IO, Telegram, the inbound bot API...).
  */
 export async function handleMessage(user, text, opts = {}) {
+  text = String(text ?? '').trim();
+  if (!text) throw Object.assign(new Error('Message text is required'), { status: 400 });
+  if (text.length > MAX_MESSAGE_LENGTH) throw Object.assign(new Error(`Message is too long (max ${MAX_MESSAGE_LENGTH} characters)`), { status: 400 });
   const conversation = await getConversation(user, opts);
   const isFirst = (await Message.countDocuments({ conversation: conversation._id })) === 0;
 
@@ -65,7 +80,15 @@ export async function handleMessage(user, text, opts = {}) {
     } else {
       // 2) The assistant brain: Claude with tools, or the rule-based fallback
       const actions = makeActions(user, { conversationId: conversation._id });
-      const useClaude = await llmAvailable(user);
+      let useClaude = await llmAvailable(user);
+      let quotaNote = '';
+      if (useClaude) {
+        const quota = await takeAiQuota(user._id);
+        if (!quota.ok) {
+          useClaude = false;
+          quotaNote = `\n\n_You've used today's ${quota.limit} AI messages, so I answered with my basic brain. The limit resets at midnight UTC._`;
+        }
+      }
       const result = useClaude
         ? await runClaude({
             user,
@@ -82,7 +105,7 @@ export async function handleMessage(user, text, opts = {}) {
         conversation: conversation._id,
         user: user._id,
         role: 'assistant',
-        content: result.text,
+        content: result.text + quotaNote,
         meta: { actions: result.actions, engine: useClaude ? 'claude' : 'local' },
       });
     }

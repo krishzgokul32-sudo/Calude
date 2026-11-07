@@ -17,8 +17,8 @@ const COMPANIES = ['Bloom Studio', 'Nimbus Labs', 'Spice Route Foods', 'Orbit Fi
 const TITLES = ['5 tips to grow on Instagram', 'Behind the scenes: our studio', 'Client success story', 'How we plan a launch', 'Weekly product demo', 'Founder Q&A', 'Top tools we use', 'Before & after reel', 'Customer testimonial', 'Industry news roundup'];
 
 export async function hasBusinessData(user) {
-  const counts = await Promise.all([Lead, Invoice, Post, Project].map((M) => M.countDocuments({ user })));
-  return counts.some(Boolean);
+  const found = await Promise.all([Lead, Invoice, Post, Project].map((M) => M.exists({ user })));
+  return found.some(Boolean);
 }
 
 export async function createSampleData(user) {

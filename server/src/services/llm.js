@@ -6,7 +6,10 @@ import { decrypt } from './secrets.js';
 // Claude integration. A user's own API key (saved in Settings) is used first;
 // otherwise the server's ANTHROPIC_API_KEY. With neither, the assistant falls
 // back to the rule-based brain (localBrain.js).
-const serverClient = config.anthropicKey ? new Anthropic({ apiKey: config.anthropicKey }) : null;
+// Timeout + retries on every call (guide §07): the SDK retries 408/409/429/5xx and connection errors
+// with exponential backoff and jitter, and gives up after 90 s instead of hanging a request forever.
+const CLIENT_OPTS = { timeout: 90_000, maxRetries: 2 };
+const serverClient = config.anthropicKey ? new Anthropic({ apiKey: config.anthropicKey, ...CLIENT_OPTS }) : null;
 const userClients = new Map(); // apiKey -> Anthropic client
 
 export const serverKeyConfigured = () => Boolean(serverClient);
@@ -14,7 +17,7 @@ export const serverKeyConfigured = () => Boolean(serverClient);
 export function makeClient(apiKey) {
   if (!userClients.has(apiKey)) {
     if (userClients.size > 500) userClients.clear();
-    userClients.set(apiKey, new Anthropic({ apiKey }));
+    userClients.set(apiKey, new Anthropic({ apiKey, ...CLIENT_OPTS }));
   }
   return userClients.get(apiKey);
 }
@@ -34,7 +37,7 @@ export const llmAvailable = async (user) => Boolean(await clientFor(user));
 /** Check a key works by looking up the configured model. Throws a readable error. */
 export async function verifyKey(apiKey) {
   try {
-    await new Anthropic({ apiKey, maxRetries: 0 }).models.retrieve(config.claudeModel);
+    await new Anthropic({ apiKey, maxRetries: 0, timeout: 15_000 }).models.retrieve(config.claudeModel);
   } catch (err) {
     if (err instanceof Anthropic.AuthenticationError) throw new Error('That API key was rejected by Anthropic. Check it and try again.');
     if (err instanceof Anthropic.PermissionDeniedError) throw new Error(`This key can't use ${config.claudeModel}.`);
@@ -70,7 +73,9 @@ function textOf(response) {
 function friendlyError(err) {
   if (err instanceof Anthropic.AuthenticationError) return new Error('Your Claude API key was rejected. Update it in Settings.');
   if (err instanceof Anthropic.RateLimitError) return new Error('Claude is rate-limiting this key right now. Try again in a moment.');
+  if (err instanceof Anthropic.APIConnectionTimeoutError) return new Error('Claude took too long to answer. Please try again.');
   if (err instanceof Anthropic.APIConnectionError) return new Error("Couldn't reach Claude. Check the server's internet connection.");
+  if (err instanceof Anthropic.InternalServerError || err?.status === 529) return new Error('Claude is overloaded right now. Please try again in a minute.');
   return err;
 }
 

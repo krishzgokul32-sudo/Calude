@@ -15,4 +15,6 @@ const noteSchema = new mongoose.Schema(
 
 noteSchema.index({ title: 'text', content: 'text', tags: 'text' });
 
+noteSchema.index({ user: 1, pinned: -1, updatedAt: -1 });
+
 export default mongoose.model('Note', noteSchema);

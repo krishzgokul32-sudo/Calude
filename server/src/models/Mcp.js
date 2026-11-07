@@ -36,6 +36,7 @@ const logSchema = new mongoose.Schema(
   { timestamps: true }
 );
 logSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 }); // keep 30 days
+logSchema.index({ user: 1, createdAt: -1 });
 
 export const McpSettings = mongoose.model('McpSettings', settingsSchema);
 export const McpKey = mongoose.model('McpKey', keySchema);
