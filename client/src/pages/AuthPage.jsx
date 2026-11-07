@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Mail, Lock, User, ArrowRight, Sparkles } from 'lucide-react';
 import ParticleSphere from '../components/ParticleSphere';
@@ -9,7 +10,8 @@ const HEADLINE = 'Your life, on autopilot.'.split(' ');
 
 export default function AuthPage() {
   const { authenticate } = useAuth();
-  const [mode, setMode] = useState('login');
+  const [params] = useSearchParams();
+  const [mode, setMode] = useState(params.get('mode') === 'register' ? 'register' : 'login');
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -101,6 +103,7 @@ export default function AuthPage() {
 
       <div style={{ display: 'grid', placeItems: 'center', padding: 20 }}>
         <motion.div className="auth-card glass" initial={{ opacity: 0, y: 30, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 160, damping: 20 }}>
+          <Link to="/welcome" className="land-brand" style={{ marginBottom: 22, fontSize: 12 }}><span className="land-sigil" style={{ width: 28, height: 28, fontSize: 11 }}>GK</span>Agentic AI</Link>
           <AnimatePresence mode="wait">
             <motion.div key={mode} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <h2 style={{ fontSize: 28 }}>{mode === 'login' ? 'Welcome back' : 'Create your assistant'}</h2>

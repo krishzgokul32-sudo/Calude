@@ -6,6 +6,7 @@ import AssistantOrb from './components/AssistantOrb';
 import Layout from './components/Layout';
 
 const AuthPage = lazy(() => import('./pages/AuthPage'));
+const Landing = lazy(() => import('./pages/Landing'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Chat = lazy(() => import('./pages/Chat'));
 const Tasks = lazy(() => import('./pages/Tasks'));
@@ -35,8 +36,9 @@ export default function App() {
       ) : (
         <Suspense fallback={null}>
         <Routes>
+          <Route path="/welcome" element={<Landing />} />
           <Route path="/login" element={user ? <Navigate to="/" /> : <AuthPage />} />
-          <Route element={user ? <Layout /> : <Navigate to="/login" />}>
+          <Route element={user ? <Layout /> : <Navigate to="/welcome" />}>
             <Route index element={<Dashboard />} />
             <Route path="chat" element={<Chat />} />
             <Route path="chat/:id" element={<Chat />} />
