@@ -40,16 +40,16 @@ export default function AuthPage() {
         {/* Orbit stage: the particle sphere with GK's work floating around it. */}
         <div className="orbit-stage">
           <div className="orbit-sphere">
-            <ParticleSphere size={400} state={busy ? 'thinking' : 'idle'} />
+            <ParticleSphere size={420} state={busy ? 'thinking' : 'idle'} />
           </div>
 
-          <motion.div className="orbit-item" style={{ left: '4%', top: '9%' }} initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, type: 'spring' }}>
+          <motion.div className="orbit-item" style={{ left: '2%', top: '6%' }} initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, type: 'spring' }}>
             <motion.div className="pill-bubble" style={{ transform: 'rotate(-3deg)' }} animate={{ y: [0, -6, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}>
               Why are my invoices paid late?
             </motion.div>
           </motion.div>
 
-          <motion.div className="orbit-item" style={{ left: '0%', top: '33%', width: 300 }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, type: 'spring' }}>
+          <motion.div className="orbit-item" style={{ left: '0%', top: '42%', width: 272 }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, type: 'spring' }}>
             <motion.div className="float-card" style={{ padding: 18, textAlign: 'left' }} animate={{ y: [0, 6, 0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}>
               <span className="accent-dot">✦</span>
               <p style={{ margin: '12px 0 14px', fontSize: 14.5, lineHeight: 1.5, color: 'var(--text-2)' }}>
@@ -71,7 +71,7 @@ export default function AuthPage() {
             </motion.div>
           </motion.div>
 
-          <motion.div className="orbit-item" style={{ right: '0%', top: '12%', width: 300 }} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.8, type: 'spring' }}>
+          <motion.div className="orbit-item" style={{ right: '0%', top: '10%', width: 268 }} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.8, type: 'spring' }}>
             <motion.div className="float-card" style={{ padding: 18, textAlign: 'left', transform: 'rotate(2.4deg)' }} animate={{ y: [0, -7, 0] }} transition={{ duration: 6.5, repeat: Infinity, ease: 'easeInOut' }}>
               <div className="row" style={{ marginBottom: 6 }}>
                 <span style={{ color: 'var(--primary)' }}>✦</span><strong>Suggested follow-up</strong><span className="spacer" /><span className="small muted">Finance</span>
@@ -83,7 +83,7 @@ export default function AuthPage() {
             </motion.div>
           </motion.div>
 
-          <motion.div className="orbit-item row" style={{ right: '2%', top: '64%', gap: 8 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.05 }}>
+          <motion.div className="orbit-item row" style={{ right: '0%', top: '70%', gap: 8 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.05 }}>
             <span className="chip">Show overdue invoices</span>
             <span className="chip">Compare clients</span>
           </motion.div>
